@@ -3,6 +3,10 @@
 Open-source, community-built software for Nothing Phone owners. Privacy-first,
 zero hosting cost: every cloud feature runs on keys **you** supply (BYOK).
 
+![Incoming call, live transcript and Now Playing widget](docs/images/preview.png)
+
+*Design previews rendered from the app's own design tokens; on-device screenshots to follow.*
+
 ```
 nothing-suite/
 ├── README.md
