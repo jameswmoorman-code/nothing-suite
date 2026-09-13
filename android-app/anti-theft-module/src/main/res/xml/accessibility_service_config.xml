@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Minimal scope on purpose: window-state events only, no content retrieval
+  from app windows (canRetrieveWindowContent=false), so the service cannot
+  read text in other apps. This matters for the Play review.
+-->
+<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:accessibilityEventTypes="typeWindowStateChanged|typeWindowsChanged"
+    android:accessibilityFeedbackType="feedbackGeneric"
+    android:accessibilityFlags="flagReportViewIds|flagRetrieveInteractiveWindows"
+    android:canRetrieveWindowContent="false"
+    android:description="@string/service_description"
+    android:notificationTimeout="50"
+    android:packageNames="com.android.systemui" />

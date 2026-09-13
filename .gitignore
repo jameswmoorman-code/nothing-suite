@@ -1,0 +1,17 @@
+# Node
+node_modules/
+backend-server/.env
+# Android / Gradle
+android-app/.gradle/
+android-app/build/
+android-app/*/build/
+android-app/local.properties
+android-app/.idea/
+android-app/*.iml
+android-app/glyph-sdk/*.aar
+android-app/core-design/src/main/res/font/*.ttf
+# Python
+__pycache__/
+*.pyc
+# OS
+.DS_Store

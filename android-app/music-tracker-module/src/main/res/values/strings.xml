@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Now Playing</string>
+    <string name="widget_label">Now Playing (dot matrix)</string>
+    <string name="widget_description">Shows the song playing around you, recognised every few minutes.</string>
+    <string name="notif_channel">Listening</string>
+    <string name="notif_title">LISTENING FOR MUSIC</string>
+    <string name="notif_text">Samples 5 seconds of sound every few minutes. Tap to pause.</string>
+</resources>

@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!--
+      WHY AN ACCESSIBILITY SERVICE AND NOT AN OVERLAY
+      TYPE_APPLICATION_OVERLAY windows are drawn *below* the status bar and are
+      hidden entirely while the lock screen (keyguard) is showing, and since
+      Android 12 an overlay cannot swallow touches and pass them on. So an
+      "invisible box over the pull-down zone" cannot exist for a normal app.
+      The only signal a third-party app can get is the accessibility event
+      that fires when System UI opens the shade — and the only lever it has
+      is GLOBAL_ACTION_DISMISS_NOTIFICATION_SHADE. That's what this does.
+    -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <application
+        android:allowBackup="false"
+        android:icon="@android:drawable/ic_lock_lock"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@android:style/Theme.Material.NoActionBar">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- Shown over the lock screen; hosts the BiometricPrompt. -->
+        <activity
+            android:name=".BiometricGateActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:launchMode="singleInstance"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
+            android:theme="@style/Theme.ShadeGuard.Gate" />
+
+        <service
+            android:name=".ShadeGuardAccessibilityService"
+            android:exported="true"
+            android:label="@string/service_label"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/accessibility_service_config" />
+        </service>
+    </application>
+</manifest>

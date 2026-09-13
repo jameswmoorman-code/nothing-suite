@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- ===================== Telephony (default dialer) ===================== -->
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <uses-permission android:name="android.permission.CALL_PHONE" />
+    <uses-permission android:name="android.permission.ANSWER_PHONE_CALLS" />
+    <uses-permission android:name="android.permission.READ_CALL_LOG" />
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
+    <uses-permission android:name="android.permission.MANAGE_OWN_CALLS" />
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+
+    <!-- ===================== Live transcript + background =================== -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_PHONE_CALL" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+    <!-- ===================== Glyph Developer Kit ============================ -->
+    <uses-permission android:name="com.nothing.ketchum.permission.ENABLE" />
+
+    <!-- ===================== Google Play Billing ============================ -->
+    <uses-permission android:name="com.android.vending.BILLING" />
+
+    <!-- Only a dialer needs these; declared so the role is offered -->
+    <uses-feature android:name="android.hardware.telephony" android:required="true" />
+
+    <!-- Needed so the app can offer itself as a dialer target for other apps -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.DIAL" />
+        </intent>
+    </queries>
+
+    <application
+        android:name=".NothingSuiteApp"
+        android:allowBackup="false"
+        android:icon="@android:drawable/sym_action_call"
+        android:label="@string/app_name"
+        android:networkSecurityConfig="@xml/network_security_config"
+        android:supportsRtl="true"
+        android:theme="@android:style/Theme.Material.NoActionBar">
+
+        <!-- "test" for development; production key from Nothing's developer programme -->
+        <meta-data android:name="NothingKey" android:value="test" />
+
+        <!-- ================== Launcher / setup ================== -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".settings.SettingsActivity"
+            android:exported="false" />
+
+        <!--
+          ================== Dialer intent filters ==================
+          RoleManager will only offer ROLE_DIALER if the app handles:
+            * ACTION_DIAL with no data, and with tel: data
+            * ACTION_VIEW tel:
+            * ACTION_CALL_BUTTON (optional but conventional)
+          For this MVP MainActivity is also the dial screen.
+        -->
+        <activity-alias
+            android:name=".DialActivity"
+            android:exported="true"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.DIAL" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.DIAL" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="tel" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="tel" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.CALL_BUTTON" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity-alias>
+
+        <!-- ================== Incoming call UI ================== -->
+        <activity
+            android:name=".telecom.IncomingCallActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:launchMode="singleTask"
+            android:showOnLockScreen="true"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
+            android:taskAffinity="uk.nothingsuite.app.call" />
+
+        <!-- ================== Live transcript ================== -->
+        <activity
+            android:name=".transcript.LiveTranscriptActivity"
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true" />
+
+        <!--
+          ================== InCallService ==================
+          BIND_INCALL_SERVICE is a signature|privileged permission that the
+          *system* holds; declaring it here means only the system can bind us.
+          IN_CALL_SERVICE_UI = true tells Telecom we draw our own call screen.
+        -->
+        <service
+            android:name=".telecom.ScreenerInCallService"
+            android:exported="true"
+            android:foregroundServiceType="phoneCall"
+            android:permission="android.permission.BIND_INCALL_SERVICE">
+            <meta-data
+                android:name="android.telecom.IN_CALL_SERVICE_UI"
+                android:value="true" />
+            <meta-data
+                android:name="android.telecom.IN_CALL_SERVICE_RINGING"
+                android:value="true" />
+            <intent-filter>
+                <action android:name="android.telecom.InCallService" />
+            </intent-filter>
+        </service>
+
+        <!--
+          ================== Glyph Progress Tracker ==================
+          NotificationListenerService: user must enable it in
+          Settings → Notifications → Device & app notifications.
+        -->
+        <service
+            android:name=".glyph.GlyphProgressListener"
+            android:exported="true"
+            android:label="@string/glyph_listener_label"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.service.notification.default_filter_types"
+                android:value="ongoing|alerting|silent" />
+        </service>
+    </application>
+</manifest>

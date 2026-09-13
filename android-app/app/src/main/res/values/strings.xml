@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Nothing Suite</string>
+    <string name="glyph_listener_label">Glyph Progress Tracker</string>
+    <string name="screen_call">SCREEN</string>
+    <string name="answer_call">ANSWER</string>
+    <string name="decline_call">DECLINE</string>
+    <string name="incoming_call">INCOMING CALL</string>
+    <string name="screening_call">SCREENING</string>
+    <string name="transcript_waiting">WAITING FOR CALLER…</string>
+    <string name="set_default_dialer">SET AS DEFAULT PHONE APP</string>
+</resources>
