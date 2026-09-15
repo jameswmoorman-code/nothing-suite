@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Dot Widgets</string>
+    <string name="w_clock">Dot Clock</string>
+    <string name="w_date">Dot Date</string>
+    <string name="w_battery">Dot Battery</string>
+    <string name="w_progress">Dot Progress</string>
+    <string name="w_countdown">Dot Countdown</string>
+    <string name="w_label">Dot Label</string>
+    <string name="d_clock">Big dot-matrix time with the date underneath.</string>
+    <string name="d_date">Day and date in dot-matrix, nothing else.</string>
+    <string name="d_battery">Battery level as a row of dots. Refreshes when you plug in.</string>
+    <string name="d_progress">How far through the day, month and year you are.</string>
+    <string name="d_countdown">Days until a date you choose.</string>
+    <string name="d_label">Any text you like, in dot-matrix.</string>
+    <string name="locked">UNLOCK IN APP</string>
+</resources>

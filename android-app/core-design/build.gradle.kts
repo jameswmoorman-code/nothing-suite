@@ -7,7 +7,7 @@ plugins {
 android {
     namespace = "uk.nothingsuite.design"
     compileSdk = 35
-    defaultConfig { minSdk = 31 }
+    defaultConfig { minSdk = 26 }   // libraries support Android 8+; the Nothing-only apps set their own higher minSdk
     buildFeatures { compose = true }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

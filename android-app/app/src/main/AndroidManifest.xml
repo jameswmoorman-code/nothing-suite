@@ -23,8 +23,6 @@
     <!-- ===================== Glyph Developer Kit ============================ -->
     <uses-permission android:name="com.nothing.ketchum.permission.ENABLE" />
 
-    <!-- ===================== Google Play Billing ============================ -->
-    <uses-permission android:name="com.android.vending.BILLING" />
 
     <!-- Only a dialer needs these; declared so the role is offered -->
     <uses-feature android:name="android.hardware.telephony" android:required="true" />

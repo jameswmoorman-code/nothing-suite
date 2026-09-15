@@ -1,7 +1,7 @@
 package uk.nothingsuite.app.glyph
 
 import kotlinx.coroutines.delay
-import uk.nothingsuite.app.license.Tier
+import uk.nothingsuite.billing.Tier
 
 /**
  * How progress is *drawn* on the strip. Free tier gets a plain fill;

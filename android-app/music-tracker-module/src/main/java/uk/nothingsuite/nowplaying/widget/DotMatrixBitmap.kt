@@ -26,7 +26,7 @@ object DotMatrixBitmap {
     ): Bitmap {
         val density = context.resources.displayMetrics.scaledDensity
         val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            typeface = ResourcesCompat.getFont(context, DesignR.font.ndot) ?: android.graphics.Typeface.MONOSPACE
+            typeface = ResourcesCompat.getFont(context, DesignR.font.doto_black) ?: android.graphics.Typeface.MONOSPACE
             textSize = sizeSp * density
             this.color = color
             this.letterSpacing = letterSpacing

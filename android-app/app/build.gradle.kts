@@ -33,6 +33,7 @@ android {
 
 dependencies {
     implementation(project(":core-design"))
+    implementation(project(":core-billing"))
 
     // Official Glyph SDK (.aar in ../glyph-sdk). Comment out until you've downloaded it.
     implementation(group = "", name = "glyph-sdk", ext = "aar")
@@ -42,7 +43,6 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.5")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.5")
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
-    implementation("com.android.billingclient:billing-ktx:7.1.1")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")

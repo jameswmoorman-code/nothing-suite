@@ -19,7 +19,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import uk.nothingsuite.app.license.Sku
+import uk.nothingsuite.billing.Sku
 import uk.nothingsuite.app.settings.SettingsActivity
 import uk.nothingsuite.app.telecom.DialerRoleManager
 import uk.nothingsuite.design.NothingTheme
@@ -109,11 +109,11 @@ class MainActivity : ComponentActivity() {
                                 Spacer(Modifier.height(8.dp))
                                 Text("Sweep and milestone animations on the Glyph strip. One-time purchase.", style = typography.body)
                                 Spacer(Modifier.height(12.dp))
-                                NothingButton("UNLOCK PLUS · ${Sku.PLUS.price}", NothingButtonStyle.Accent, Modifier.fillMaxWidth()) {
+                                NothingButton("UNLOCK PLUS · ${app.license.catalogue.plus?.price}", NothingButtonStyle.Accent, Modifier.fillMaxWidth()) {
                                     app.license.play.buy(this@MainActivity, Sku.PLUS)
                                 }
                                 Spacer(Modifier.height(8.dp))
-                                NothingButton("UNLOCK PRO · ${Sku.PRO.price}", NothingButtonStyle.Outline, Modifier.fillMaxWidth()) {
+                                NothingButton("UNLOCK PRO · ${app.license.catalogue.pro?.price}", NothingButtonStyle.Outline, Modifier.fillMaxWidth()) {
                                     app.license.play.buy(this@MainActivity, Sku.PRO)
                                 }
                                 Spacer(Modifier.height(8.dp))

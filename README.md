@@ -16,7 +16,9 @@ nothing-suite/
 │   ├── carrier-forwarding.md        The *61* (no-answer) forwarding that makes screening work
 │   ├── google-play.md               Selling to Nothing phones only, products, permissions review
 │   ├── shade-guard.md               Anti-theft Quick Settings lock — how it works and its limits
-│   └── now-playing.md               Ambient music widget — sampling loop, costs, Play notes
+│   ├── now-playing.md               Ambient music widget — sampling loop, costs, Play notes
+│   ├── roadmap.md                   12-month, 11-app portfolio plan with sizing
+│   └── dot-widgets.md               Roadmap #1 — design notes and Play listing copy
 ├── backend-server/                  Telephony engine (Node 20 + Express + ws). Runs on YOUR machine.
 │   ├── package.json
 │   ├── requirements.txt             Python deps for the free local transcriber
@@ -39,7 +41,8 @@ nothing-suite/
     ├── build.gradle.kts
     ├── gradle.properties
     ├── glyph-sdk/                   Drop the official Glyph SDK .aar here (not redistributed)
-    ├── core-design/                 :core-design — Nothing OS design system (Jetpack Compose)
+    ├── core-billing/                :core-billing — Google Play one-time unlock, shared by every paid app
+    ├── core-design/                 :core-design — Nothing OS design system (Jetpack Compose) + bundled Doto font
     │   └── src/main/java/uk/nothingsuite/design/
     │       ├── NothingTheme.kt      Theme entry point + LocalNothingHaptics
     │       ├── NothingColors.kt     Monochrome + Nothing red palette, light/dark
@@ -78,10 +81,7 @@ nothing-suite/
                 │   ├── GlyphProgressListener.kt   NotificationListenerService routing loop
                 │   ├── ProgressExtractors.kt      Per-app parsers (delivery, transit, generic %)
                 │   └── GlyphAnimations.kt         Free vs premium visualiser animations
-                └── license/
-                    ├── LicenseManager.kt          Premium lock switch (Play Billing first, file fallback)
-                    ├── PlayBillingLicenseSource.kt Google Play one-time purchases £2.99 / £4.99
-                    └── Tier.kt
+                └── (billing lives in :core-billing)
     ├── anti-theft-module/           :anti-theft-module — "Shade Guard" (separate app, uk.nothingsuite.shadeguard)
     │   ├── build.gradle.kts
     │   └── src/main/
@@ -92,6 +92,15 @@ nothing-suite/
     │           ├── BiometricGateActivity.kt           BiometricPrompt over the lock screen, 45 s grace
     │           ├── GuardState.kt                      Enabled flag, grace window, last event
     │           └── MainActivity.kt                    Setup screen
+    ├── dot-widgets/                 :dot-widgets — "Dot Widgets" for ANY Android phone (roadmap #1, uk.nothingsuite.dotwidgets)
+    │   └── src/main/
+    │       ├── AndroidManifest.xml            Six widget receivers, two config activities, zero permissions
+    │       ├── res/layout/widget_*.xml        RemoteViews layouts using the bundled dot-matrix font
+    │       └── java/uk/nothingsuite/dotwidgets/
+    │           ├── widgets/DotWidget.kt           Base class: paywall state, tap-to-open, refresh
+    │           ├── widgets/Widgets.kt             Clock, Date, Battery (free) · Progress, Countdown, Label (£2.99)
+    │           ├── config/WidgetConfigActivity.kt Countdown + Label setup screens
+    │           └── MainActivity.kt                Gallery + unlock
     └── music-tracker-module/        :music-tracker-module — "Now Playing" (separate app, uk.nothingsuite.nowplaying)
         ├── build.gradle.kts
         └── src/main/
@@ -124,6 +133,7 @@ of one (Shade Guard is the risky one) doesn't block the others.
 |---|---|---|---|
 | **Nothing Suite** (dialer) | `:app` | AI call screener: tap Screen, the call rings out to your screener number, watch a live transcript. Plus the Universal Glyph Progress Tracker for deliveries/transit | A phone number (~£1/month + ~1p/min). Speech-to-text free with the local option |
 | **Shade Guard** | `:anti-theft-module` | Fingerprint before Quick Settings opens while the phone is locked, so a thief can't flick on flight mode | none |
+| **Dot Widgets** | `:dot-widgets` | Dot-matrix clock, date, battery, progress, countdown and label widgets for any Android phone — no KWGT | none |
 | **Now Playing** | `:music-tracker-module` | Dot-matrix widget naming the music playing around you, sampled every few minutes | Your own recognition-service key (ACRCloud etc.) |
 | *(library)* | `:core-design` | Compose design system: monochrome + red, dot-matrix type, custom haptics | none |
 
@@ -148,10 +158,9 @@ Point your Twilio number's *Voice → A call comes in* webhook at
 ## Quick start (Android)
 
 1. Download the Glyph Developer Kit `.aar` from Nothing's GitHub and drop it in `android-app/glyph-sdk/`.
-2. Put a dot-matrix `.ttf` in `core-design/src/main/res/font/ndot.ttf` (see `NothingType.kt` for licensing notes).
-3. Open `android-app/` in Android Studio, run on a Nothing Phone (1/2/2a/3a/3).
-4. Accept the "Set as default phone app" prompt, then grant Notification Access for the Glyph tracker.
-5. In Setup, tap the two "Forward" buttons once each (see `docs/carrier-forwarding.md`).
+2. Open `android-app/` in Android Studio, run on a Nothing Phone (1/2/2a/3a/3).
+3. Accept the "Set as default phone app" prompt, then grant Notification Access for the Glyph tracker.
+4. In Setup, tap the two "Forward" buttons once each (see `docs/carrier-forwarding.md`).
 
 ## Honest caveats, up front
 
@@ -160,4 +169,4 @@ Point your Twilio number's *Voice → A call comes in* webhook at
 * **Premium unlock sells through Google Play Billing** (15 % cut). The signed-licence-file path remains for your own testing and any future non-Play build; it is never used for Play sales. See `docs/google-play.md` for restricting the listing to Nothing phones.
 * **Shade Guard is experimental.** The overlay approach in the original brief can't work on modern Android (overlays sit under the status bar and vanish on the lock screen), so it's an accessibility service that closes the shade and asks for a fingerprint. That leaves a ~100 ms gap, doesn't cover power-off, overlaps with Android 15's built-in theft protections, and may not pass Google Play's accessibility-service policy. Details in `docs/shade-guard.md`.
 * **Now Playing shows the mic indicator every time it listens.** Background microphone use requires a foreground service with a visible notification; WorkManager can't record on Android 11+. It also needs the user's own recognition key. Details in `docs/now-playing.md`.
-* **Fonts.** Nothing's NDot font is proprietary. Ship an OFL dot-matrix face (e.g. *Doto*) or let users import their own; do not commit NDot to a public repo.
+* **Fonts.** Doto (OFL) is bundled as the dot-matrix face. Nothing's NDot is proprietary and is never committed; see `core-design/src/main/res/font/README.md`.

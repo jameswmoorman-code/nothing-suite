@@ -1,4 +1,4 @@
-package uk.nothingsuite.app.license
+package uk.nothingsuite.billing
 
 import android.app.Activity
 import android.content.Context
@@ -19,10 +19,9 @@ import java.util.concurrent.TimeUnit
 /**
  * Google Play one-time purchases ("in-app products", non-consumable).
  *
- * Play Console setup (once):
- *   Monetise → Products → In-app products → Create
- *     product ID  nothing_suite_plus   price £2.99
- *     product ID  nothing_suite_pro    price £4.99
+ * Play Console setup (once per app):
+ *   Monetise → Products → In-app products → Create, using the product IDs
+ *   from that app's [Catalogue].
  *
  * Google handles payment, VAT, refunds and restores across devices. We only
  * ever ask "does this Google account own PLUS or PRO?" — no user data is
@@ -30,6 +29,7 @@ import java.util.concurrent.TimeUnit
  */
 class PlayBillingLicenseSource(
     context: Context,
+    private val catalogue: Catalogue,
     private val onEntitlementChanged: () -> Unit,
 ) : LicenseSource, PurchasesUpdatedListener {
 
@@ -65,9 +65,10 @@ class PlayBillingLicenseSource(
                 .filter { it.purchaseState == Purchase.PurchaseState.PURCHASED }
                 .onEach { acknowledgeIfNeeded(it) }
                 .flatMap { it.products }
+            val ownedSkus = owned.mapNotNull { catalogue.byId(it)?.sku }
             cachedSku = when {
-                PRODUCT_PRO in owned -> Sku.PRO
-                PRODUCT_PLUS in owned -> Sku.PLUS
+                Sku.PRO in ownedSkus -> Sku.PRO
+                Sku.PLUS in ownedSkus -> Sku.PLUS
                 else -> null
             }
             onEntitlementChanged()
@@ -81,7 +82,9 @@ class PlayBillingLicenseSource(
 
     /** Launch the Google Play purchase sheet for a SKU. */
     fun buy(activity: Activity, sku: Sku) {
-        val productId = if (sku == Sku.PRO) PRODUCT_PRO else PRODUCT_PLUS
+        val productId = catalogue.idFor(sku) ?: run {
+            Log.w(TAG, "no product configured for $sku"); return
+        }
         val query = QueryProductDetailsParams.newBuilder()
             .setProductList(
                 listOf(
@@ -140,9 +143,7 @@ class PlayBillingLicenseSource(
         return cachedSku
     }
 
-    companion object {
-        private const val TAG = "PlayBilling"
-        const val PRODUCT_PLUS = "nothing_suite_plus"
-        const val PRODUCT_PRO = "nothing_suite_pro"
+    private companion object {
+        const val TAG = "PlayBilling"
     }
 }

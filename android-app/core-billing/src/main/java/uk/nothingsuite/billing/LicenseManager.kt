@@ -1,4 +1,4 @@
-package uk.nothingsuite.app.license
+package uk.nothingsuite.billing
 
 import android.content.Context
 import android.util.Base64
@@ -29,12 +29,13 @@ import java.security.spec.X509EncodedKeySpec
  */
 class LicenseManager(
     private val context: Context,
+    val catalogue: Catalogue,
     sources: List<LicenseSource>? = null,
 ) {
     private val _tier = MutableStateFlow(Tier.Free)
     val tier: StateFlow<Tier> = _tier.asStateFlow()
 
-    val play: PlayBillingLicenseSource = PlayBillingLicenseSource(context) { refresh() }
+    val play: PlayBillingLicenseSource = PlayBillingLicenseSource(context, catalogue) { refresh() }
     private val sources: List<LicenseSource> = sources ?: listOf(play, FileLicenseSource(context))
 
     init { refresh() }

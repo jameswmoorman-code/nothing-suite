@@ -9,7 +9,7 @@ android-app/local.properties
 android-app/.idea/
 android-app/*.iml
 android-app/glyph-sdk/*.aar
-android-app/core-design/src/main/res/font/*.ttf
+android-app/core-design/src/main/res/font/ndot.ttf
 # Python
 __pycache__/
 *.pyc

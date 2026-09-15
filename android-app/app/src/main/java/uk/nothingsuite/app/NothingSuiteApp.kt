@@ -4,7 +4,10 @@ import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import uk.nothingsuite.app.glyph.GlyphController
-import uk.nothingsuite.app.license.LicenseManager
+import uk.nothingsuite.billing.Catalogue
+import uk.nothingsuite.billing.LicenseManager
+import uk.nothingsuite.billing.Product
+import uk.nothingsuite.billing.Sku
 import uk.nothingsuite.app.settings.SecureSettings
 import uk.nothingsuite.app.telecom.CallRepository
 
@@ -23,7 +26,15 @@ class NothingSuiteApp : Application() {
         super.onCreate()
         instance = this
         settings = SecureSettings(this)
-        license = LicenseManager(this)
+        license = LicenseManager(
+            this,
+            Catalogue(
+                listOf(
+                    Product(Sku.PLUS, "nothing_suite_plus", "£2.99"),
+                    Product(Sku.PRO, "nothing_suite_pro", "£4.99"),
+                )
+            ),
+        )
         glyph = GlyphController(this)
         createChannels()
     }
