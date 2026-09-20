@@ -1,53 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/bg_widget"
-    android:gravity="center_vertical"
-    android:orientation="vertical"
     android:padding="20dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
+        android:layout_gravity="center"
+        android:gravity="center_horizontal"
+        android:orientation="vertical">
 
-        <TextView
-            android:id="@+id/level"
-            style="@style/DotText.Title"
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="82%" />
+            android:gravity="center"
+            android:orientation="horizontal">
 
-        <TextView
-            android:id="@+id/state"
-            style="@style/DotText.Label"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:layout_weight="1"
-            android:text="CHARGING"
-            android:textColor="@color/dw_red" />
+            <ImageView android:id="@+id/level" android:layout_width="wrap_content" android:layout_height="wrap_content" android:adjustViewBounds="true" android:contentDescription="@null" />
+
+            <ImageView android:id="@+id/state" android:layout_width="wrap_content" android:layout_height="wrap_content" android:adjustViewBounds="true" android:contentDescription="@null" android:layout_marginStart="12dp" />
+        </LinearLayout>
+
+        <ImageView android:id="@+id/dots" android:layout_width="wrap_content" android:layout_height="wrap_content" android:adjustViewBounds="true" android:contentDescription="@null" android:layout_marginTop="8dp" />
+
+        <ImageView android:id="@+id/locked" android:layout_width="wrap_content" android:layout_height="wrap_content" android:adjustViewBounds="true" android:contentDescription="@null" android:visibility="gone" />
     </LinearLayout>
-
-    <TextView
-        android:id="@+id/dots"
-        style="@style/DotText.Label"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
-        android:letterSpacing="0.3"
-        android:text="●●●●●●●●○○"
-        android:textColor="@color/dw_white" />
-
-    <TextView
-        android:id="@+id/locked"
-        style="@style/DotText.Label"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/locked"
-        android:textColor="@color/dw_red"
-        android:visibility="gone" />
-</LinearLayout>
+</FrameLayout>

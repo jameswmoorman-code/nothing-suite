@@ -6,12 +6,24 @@
     <string name="w_battery">Dot Battery</string>
     <string name="w_progress">Dot Progress</string>
     <string name="w_countdown">Dot Countdown</string>
+    <string name="w_streak">Dot Streak</string>
     <string name="w_label">Dot Label</string>
     <string name="d_clock">Big dot-matrix time with the date underneath.</string>
     <string name="d_date">Day and date in dot-matrix, nothing else.</string>
     <string name="d_battery">Battery level as a row of dots. Refreshes when you plug in.</string>
     <string name="d_progress">How far through the day, month and year you are.</string>
-    <string name="d_countdown">Days until a date you choose.</string>
+    <string name="d_countdown">Days until a date — or the weekend, payday, Christmas, New Year.</string>
+    <string name="d_streak">Days since you stopped — or started. Smoke-free, sober, running, anything.</string>
     <string name="d_label">Any text you like, in dot-matrix.</string>
+    <string name="w_steps">Dot Steps</string>
+    <string name="w_nextup">Dot Next Up</string>
+    <string name="w_weather">Dot Weather</string>
+    <string name="w_quote">Dot Quote</string>
+    <string name="w_storage">Dot Storage</string>
+    <string name="d_steps">Today\'s steps against your goal, from the phone\'s own counter.</string>
+    <string name="d_nextup">Your next calendar event and how long until it.</string>
+    <string name="d_weather">Temperature and sky for your town. No account, no key.</string>
+    <string name="d_quote">One short line a day — ours, or your own list.</string>
+    <string name="d_storage">How much space is left on the phone.</string>
     <string name="locked">UNLOCK IN APP</string>
 </resources>

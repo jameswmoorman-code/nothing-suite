@@ -35,8 +35,10 @@ dependencies {
     implementation(project(":core-design"))
     implementation(project(":core-billing"))
 
-    // Official Glyph SDK (.aar in ../glyph-sdk). Comment out until you've downloaded it.
-    implementation(group = "", name = "glyph-sdk", ext = "aar")
+    // Official Glyph SDK: only wired in once the .aar has been dropped into ../glyph-sdk,
+    // so the rest of the project syncs and builds without it.
+    val glyphAar = rootProject.file("glyph-sdk/glyph-sdk.aar")
+    if (glyphAar.exists()) implementation(files(glyphAar))
 
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.activity:activity-compose:1.9.2")

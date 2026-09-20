@@ -3,6 +3,7 @@ node_modules/
 backend-server/.env
 # Android / Gradle
 android-app/.gradle/
+android-app/.kotlin/
 android-app/build/
 android-app/*/build/
 android-app/local.properties

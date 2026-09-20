@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:description="@string/d_countdown"
-    android:initialLayout="@layout/widget_countdown"
-    android:previewLayout="@layout/widget_countdown"
+    android:initialLayout="@layout/widget_loading"
+    android:previewImage="@drawable/preview_countdown"
     android:minWidth="180dp"
     android:minHeight="110dp"
     android:targetCellWidth="3"
@@ -10,4 +10,5 @@
     android:resizeMode="horizontal|vertical"
     android:updatePeriodMillis="3600000"
     android:widgetCategory="home_screen|keyguard"
+    android:widgetFeatures="reconfigurable"
     android:configure="uk.nothingsuite.dotwidgets.config.CountdownConfigActivity" />

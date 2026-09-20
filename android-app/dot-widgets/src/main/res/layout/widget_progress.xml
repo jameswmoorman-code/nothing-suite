@@ -1,21 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/bg_widget"
-    android:gravity="center_vertical"
-    android:orientation="vertical"
     android:padding="20dp">
 
-    <TextView android:id="@+id/day_label" style="@style/DotText.Label" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="DAY 62%" />
-    <TextView android:id="@+id/day_dots" style="@style/DotText.Label" android:layout_width="wrap_content" android:layout_height="wrap_content" android:letterSpacing="0.3" android:textColor="@color/dw_white" android:text="●●●●●●●●●●●●○○○○○○○○" />
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:gravity="center_horizontal"
+        android:orientation="vertical">
 
-    <TextView android:id="@+id/month_label" style="@style/DotText.Label" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="MONTH 50%" />
-    <TextView android:id="@+id/month_dots" style="@style/DotText.Label" android:layout_width="wrap_content" android:layout_height="wrap_content" android:letterSpacing="0.3" android:textColor="@color/dw_white" android:text="●●●●●●●●●●○○○○○○○○○○" />
+        <ImageView android:id="@+id/day_label" android:layout_width="wrap_content" android:layout_height="wrap_content" android:adjustViewBounds="true" android:contentDescription="@null" />
+        <ImageView android:id="@+id/day_dots" android:layout_width="wrap_content" android:layout_height="wrap_content" android:adjustViewBounds="true" android:contentDescription="@null" />
 
-    <TextView android:id="@+id/year_label" style="@style/DotText.Label" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="YEAR 71%" />
-    <TextView android:id="@+id/year_dots" style="@style/DotText.Label" android:layout_width="wrap_content" android:layout_height="wrap_content" android:letterSpacing="0.3" android:textColor="@color/dw_red" android:text="●●●●●●●●●●●●●●○○○○○○" />
+        <ImageView android:id="@+id/month_label" android:layout_width="wrap_content" android:layout_height="wrap_content" android:adjustViewBounds="true" android:contentDescription="@null" android:layout_marginTop="8dp" />
+        <ImageView android:id="@+id/month_dots" android:layout_width="wrap_content" android:layout_height="wrap_content" android:adjustViewBounds="true" android:contentDescription="@null" />
 
-    <TextView android:id="@+id/locked" style="@style/DotText.Label" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/locked" android:textColor="@color/dw_red" android:visibility="gone" />
-</LinearLayout>
+        <ImageView android:id="@+id/year_label" android:layout_width="wrap_content" android:layout_height="wrap_content" android:adjustViewBounds="true" android:contentDescription="@null" android:layout_marginTop="8dp" />
+        <ImageView android:id="@+id/year_dots" android:layout_width="wrap_content" android:layout_height="wrap_content" android:adjustViewBounds="true" android:contentDescription="@null" />
+
+        <ImageView android:id="@+id/locked" android:layout_width="wrap_content" android:layout_height="wrap_content" android:adjustViewBounds="true" android:contentDescription="@null" android:visibility="gone" />
+    </LinearLayout>
+</FrameLayout>

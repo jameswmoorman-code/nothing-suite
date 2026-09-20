@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Deliberately NO permissions beyond billing (declared in :core-billing). -->
+    <!-- Each permission serves one optional widget and is asked for on that widget's setup screen. -->
+    <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />  <!-- Dot Steps -->
+    <uses-permission android:name="android.permission.READ_CALENDAR" />          <!-- Dot Next Up -->
+    <uses-permission android:name="android.permission.INTERNET" />               <!-- Dot Weather (Open-Meteo) -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />   <!-- Dot Clock: redraw on the minute (optional) -->
 
     <application
         android:name=".DotWidgetsApp"
@@ -29,6 +33,48 @@
             </intent-filter>
         </activity>
         <activity
+            android:name=".config.ShapeConfigActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".config.StreakConfigActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".config.StepsConfigActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".config.NextUpConfigActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".config.WeatherConfigActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".config.QuoteConfigActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+        <activity
             android:name=".config.LabelConfigActivity"
             android:exported="true">
             <intent-filter>
@@ -43,7 +89,12 @@
         </receiver>
 
         <receiver android:name=".widgets.DateWidget" android:exported="true" android:label="@string/w_date">
-            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="android.intent.action.DATE_CHANGED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+            </intent-filter>
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_date" />
         </receiver>
 
@@ -75,6 +126,40 @@
                 <action android:name="android.intent.action.TIME_SET" />
             </intent-filter>
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_countdown" />
+        </receiver>
+
+        <receiver android:name=".widgets.StreakWidget" android:exported="true" android:label="@string/w_streak">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="android.intent.action.DATE_CHANGED" />
+                <action android:name="android.intent.action.TIME_SET" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_streak" />
+        </receiver>
+
+        <receiver android:name=".widgets.StepsWidget" android:exported="true" android:label="@string/w_steps">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_steps" />
+        </receiver>
+
+        <receiver android:name=".widgets.NextUpWidget" android:exported="true" android:label="@string/w_nextup">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /><action android:name="android.intent.action.DATE_CHANGED" /><action android:name="android.intent.action.TIME_SET" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_nextup" />
+        </receiver>
+
+        <receiver android:name=".widgets.WeatherWidget" android:exported="true" android:label="@string/w_weather">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_weather" />
+        </receiver>
+
+        <receiver android:name=".widgets.QuoteWidget" android:exported="true" android:label="@string/w_quote">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /><action android:name="android.intent.action.DATE_CHANGED" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_quote" />
+        </receiver>
+
+        <receiver android:name=".widgets.StorageWidget" android:exported="true" android:label="@string/w_storage">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_storage" />
         </receiver>
 
         <receiver android:name=".widgets.LabelWidget" android:exported="true" android:label="@string/w_label">

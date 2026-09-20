@@ -2,16 +2,18 @@
 <resources>
     <!-- Dot-matrix text for widgets. Font comes from :core-design (Doto, OFL). -->
     <style name="DotText">
-        <item name="android:fontFamily">@font/doto_black</item>
+        <!-- Doto pre-instanced at weight 700, roundness 100: round dots with clear gaps. -->
+        <item name="android:fontFamily">@font/doto_round</item>
         <item name="android:textColor">@color/dw_white</item>
         <item name="android:textAllCaps">true</item>
         <item name="android:letterSpacing">0.12</item>
         <item name="android:includeFontPadding">false</item>
     </style>
-    <style name="DotText.Hero"><item name="android:textSize">44sp</item></style>
-    <style name="DotText.Title"><item name="android:textSize">24sp</item></style>
+    <style name="DotText.Hero"><item name="android:textSize">56sp</item></style>
+    <style name="DotText.Title"><item name="android:textSize">32sp</item></style>
     <style name="DotText.Label">
-        <item name="android:textSize">12sp</item>
+        <item name="android:fontFamily">@font/doto_round_light</item>
+        <item name="android:textSize">14sp</item>
         <item name="android:textColor">@color/dw_grey</item>
         <item name="android:letterSpacing">0.2</item>
     </style>

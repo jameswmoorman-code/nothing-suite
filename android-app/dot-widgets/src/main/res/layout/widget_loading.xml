@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Placeholder the launcher shows for a split second before our first update.
+     Deliberately a different layout from the real ones: it forces the launcher
+     to inflate the real layout from our RemoteViews (fonts intact) rather than
+     re-using its own first draw. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_widget" />

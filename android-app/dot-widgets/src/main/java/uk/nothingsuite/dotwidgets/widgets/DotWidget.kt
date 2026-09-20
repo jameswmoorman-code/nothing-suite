@@ -17,9 +17,9 @@ import uk.nothingsuite.dotwidgets.R
  * part of the free set, and how to fill the views. Everything else — the
  * paywall state, tap-to-open, refresh plumbing — lives here once.
  *
- * Plain RemoteViews rather than Glance: the dot-matrix font is applied in
- * the layout XML (android:fontFamily), so no bitmap rendering is needed and
- * TextClock ticks by itself with zero battery cost.
+ * All text is drawn as bitmaps by DotInk in our own process: launchers can't
+ * be trusted to load another app's font for widget text, but they always
+ * show an image.
  */
 abstract class DotWidget : AppWidgetProvider() {
 
@@ -28,6 +28,13 @@ abstract class DotWidget : AppWidgetProvider() {
 
     /** Fill the views. Only called when the widget is unlocked (or free). */
     abstract fun render(context: Context, views: RemoteViews, appWidgetId: Int)
+
+    /**
+     * Where a tap goes. Default: this widget's shape screen. Widgets with settings
+     * (Countdown, Label) override this to open their own setup screen.
+     */
+    open fun tapIntent(context: Context, appWidgetId: Int): Intent =
+        Intent(context, uk.nothingsuite.dotwidgets.config.ShapeConfigActivity::class.java)
 
     override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) {
         ids.forEach { update(context, manager, it) }
@@ -45,17 +52,20 @@ abstract class DotWidget : AppWidgetProvider() {
 
     fun update(context: Context, manager: AppWidgetManager, id: Int) {
         val views = RemoteViews(context.packageName, layout)
-        val unlocked = !premium || DotWidgetsApp.instance.license.tier.value.isPremium
+        views.setInt(R.id.root, "setBackgroundResource", DotWidgetsApp.instance.styleFor(id).background)
+        val unlocked = !premium || DotWidgetsApp.instance.license.tier.value.isPremium || isDebugBuild(context)
 
         if (unlocked) {
             views.setViewVisibility(R.id.locked, View.GONE)
             render(context, views, id)
         } else {
             views.setViewVisibility(R.id.locked, View.VISIBLE)
+            views.inkLabel(context, R.id.locked, context.getString(R.string.locked), R.color.dw_red)
         }
 
         val open = PendingIntent.getActivity(
-            context, id, Intent(context, MainActivity::class.java),
+            context, id,
+            tapIntent(context, id).putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, id),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
         views.setOnClickPendingIntent(R.id.root, open)
@@ -63,6 +73,14 @@ abstract class DotWidget : AppWidgetProvider() {
     }
 
     companion object {
+        /**
+         * Builds installed from Android Studio are debuggable; Play Store
+         * builds never are. Lets premium widgets be tested (and photographed)
+         * on a dev phone before billing is live.
+         */
+        fun isDebugBuild(context: Context): Boolean =
+            (context.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0
+
         /** Re-render every placed instance of one widget class. */
         fun refreshAll(context: Context, cls: Class<out DotWidget>) {
             val manager = AppWidgetManager.getInstance(context)
@@ -81,7 +99,8 @@ abstract class DotWidget : AppWidgetProvider() {
 
         val ALL: List<Class<out DotWidget>> = listOf(
             ClockWidget::class.java, DateWidget::class.java, BatteryWidget::class.java,
-            ProgressWidget::class.java, CountdownWidget::class.java, LabelWidget::class.java,
+            ProgressWidget::class.java, CountdownWidget::class.java, StreakWidget::class.java, LabelWidget::class.java,
+            StepsWidget::class.java, NextUpWidget::class.java, WeatherWidget::class.java, QuoteWidget::class.java, StorageWidget::class.java,
         )
 
         /** "●●●●●○○○○○" — the suite's progress bar. */

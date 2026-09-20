@@ -16,10 +16,15 @@ import androidx.compose.ui.unit.sp
  * never committed. We bundle Doto (Google Fonts, OFL-1.1), a near-identical
  * dot-matrix face, so the project builds out of the box.
  */
-/** Doto (OFL) is bundled; weights 700 and 900. Swap for NDot locally if you own it — see res/font/README.md */
+/**
+ * Doto (OFL) variable font: weight 100–900 plus a ROND (roundness) axis.
+ * Round dots at 100 with weight 700 give the Nothing look — separate dots,
+ * not a blocky pixel face. Swap for NDot locally if you own it — see fonts-licence/README.md
+ */
 private val DotMatrix = FontFamily(
-    Font(R.font.doto_bold, FontWeight.Bold),
-    Font(R.font.doto_black, FontWeight.Black),
+    Font(R.font.doto_round_light, FontWeight.Medium),
+    Font(R.font.doto_round, FontWeight.Bold),
+    Font(R.font.doto_round, FontWeight.Black),
 )
 private val Grotesk = FontFamily.SansSerif // swap for Inter/Manrope if bundled
 

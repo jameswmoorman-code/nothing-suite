@@ -94,7 +94,7 @@ nothing-suite/
     │           └── MainActivity.kt                    Setup screen
     ├── dot-widgets/                 :dot-widgets — "Dot Widgets" for ANY Android phone (roadmap #1, uk.nothingsuite.dotwidgets)
     │   └── src/main/
-    │       ├── AndroidManifest.xml            Six widget receivers, two config activities, zero permissions
+    │       ├── AndroidManifest.xml            Six widget receivers, two config activities; only VIBRATE (haptics)
     │       ├── res/layout/widget_*.xml        RemoteViews layouts using the bundled dot-matrix font
     │       └── java/uk/nothingsuite/dotwidgets/
     │           ├── widgets/DotWidget.kt           Base class: paywall state, tap-to-open, refresh
@@ -169,4 +169,4 @@ Point your Twilio number's *Voice → A call comes in* webhook at
 * **Premium unlock sells through Google Play Billing** (15 % cut). The signed-licence-file path remains for your own testing and any future non-Play build; it is never used for Play sales. See `docs/google-play.md` for restricting the listing to Nothing phones.
 * **Shade Guard is experimental.** The overlay approach in the original brief can't work on modern Android (overlays sit under the status bar and vanish on the lock screen), so it's an accessibility service that closes the shade and asks for a fingerprint. That leaves a ~100 ms gap, doesn't cover power-off, overlaps with Android 15's built-in theft protections, and may not pass Google Play's accessibility-service policy. Details in `docs/shade-guard.md`.
 * **Now Playing shows the mic indicator every time it listens.** Background microphone use requires a foreground service with a visible notification; WorkManager can't record on Android 11+. It also needs the user's own recognition key. Details in `docs/now-playing.md`.
-* **Fonts.** Doto (OFL) is bundled as the dot-matrix face. Nothing's NDot is proprietary and is never committed; see `core-design/src/main/res/font/README.md`.
+* **Fonts.** Doto (OFL) is bundled as the dot-matrix face. Nothing's NDot is proprietary and is never committed; see `core-design/fonts-licence/README.md`.

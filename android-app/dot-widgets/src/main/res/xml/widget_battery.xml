@@ -1,12 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:description="@string/d_battery"
-    android:initialLayout="@layout/widget_battery"
-    android:previewLayout="@layout/widget_battery"
-    android:minWidth="180dp"
-    android:minHeight="60dp"
-    android:targetCellWidth="3"
-    android:targetCellHeight="1"
+    android:initialLayout="@layout/widget_loading"
+    android:previewImage="@drawable/preview_battery"
+    android:minWidth="250dp"
+    android:minHeight="110dp"
+    android:targetCellWidth="4"
+    android:targetCellHeight="2"
     android:resizeMode="horizontal|vertical"
     android:updatePeriodMillis="1800000"
-    android:widgetCategory="home_screen|keyguard" />
+    android:widgetCategory="home_screen|keyguard"
+    android:widgetFeatures="configuration_optional|reconfigurable"
+    android:configure="uk.nothingsuite.dotwidgets.config.ShapeConfigActivity" />

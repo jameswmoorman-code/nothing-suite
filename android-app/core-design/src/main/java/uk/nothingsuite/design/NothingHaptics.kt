@@ -28,46 +28,51 @@ class NothingHaptics(context: Context) {
     /** Button press. */
     fun click() {
         if (supports(VibrationEffect.Composition.PRIMITIVE_CLICK)) {
-            vibrator.vibrate(
+            safe { vibrator.vibrate(
                 VibrationEffect.startComposition()
                     .addPrimitive(VibrationEffect.Composition.PRIMITIVE_CLICK, 0.7f)
                     .compose()
-            )
+            ) }
         } else {
-            vibrator.vibrate(VibrationEffect.createOneShot(12, 180))
+            safe { vibrator.vibrate(VibrationEffect.createOneShot(12, 180)) }
         }
     }
 
     /** Scroll detent / list item snap. */
     fun tick() {
         if (supports(VibrationEffect.Composition.PRIMITIVE_TICK)) {
-            vibrator.vibrate(
+            safe { vibrator.vibrate(
                 VibrationEffect.startComposition()
                     .addPrimitive(VibrationEffect.Composition.PRIMITIVE_TICK, 0.5f)
                     .compose()
-            )
+            ) }
         } else {
-            vibrator.vibrate(VibrationEffect.createOneShot(8, 120))
+            safe { vibrator.vibrate(VibrationEffect.createOneShot(8, 120)) }
         }
     }
 
     /** Success / "screening started". Double click, second one lighter. */
     fun confirm() {
         if (supports(VibrationEffect.Composition.PRIMITIVE_CLICK)) {
-            vibrator.vibrate(
+            safe { vibrator.vibrate(
                 VibrationEffect.startComposition()
                     .addPrimitive(VibrationEffect.Composition.PRIMITIVE_CLICK, 1.0f)
                     .addPrimitive(VibrationEffect.Composition.PRIMITIVE_CLICK, 0.5f, 60)
                     .compose()
-            )
+            ) }
         } else {
-            vibrator.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 14, 60, 10), -1))
+            safe { vibrator.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 14, 60, 10), -1)) }
         }
     }
 
     /** Error / destructive. Long-short. */
     fun reject() {
-        vibrator.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 40, 40, 15), -1))
+        safe { vibrator.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 40, 40, 15), -1)) }
+    }
+
+    /** Vibrating without the VIBRATE permission throws; a missing tick is never worth a crash. */
+    private inline fun safe(block: () -> Unit) {
+        try { block() } catch (_: SecurityException) { }
     }
 }
 

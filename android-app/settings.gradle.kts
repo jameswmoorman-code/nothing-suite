@@ -6,8 +6,6 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        // Official Glyph Developer Kit .aar dropped into ./glyph-sdk (see glyph-sdk/README.md)
-        flatDir { dirs("glyph-sdk") }
     }
 }
 rootProject.name = "NothingSuite"

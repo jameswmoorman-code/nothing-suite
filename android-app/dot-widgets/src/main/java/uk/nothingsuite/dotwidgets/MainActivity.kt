@@ -21,6 +21,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -38,6 +41,12 @@ import uk.nothingsuite.dotwidgets.widgets.DateWidget
 import uk.nothingsuite.dotwidgets.widgets.DotWidget
 import uk.nothingsuite.dotwidgets.widgets.LabelWidget
 import uk.nothingsuite.dotwidgets.widgets.ProgressWidget
+import uk.nothingsuite.dotwidgets.widgets.StreakWidget
+import uk.nothingsuite.dotwidgets.widgets.StepsWidget
+import uk.nothingsuite.dotwidgets.widgets.NextUpWidget
+import uk.nothingsuite.dotwidgets.widgets.WeatherWidget
+import uk.nothingsuite.dotwidgets.widgets.QuoteWidget
+import uk.nothingsuite.dotwidgets.widgets.StorageWidget
 
 /**
  * The gallery: every widget, a one-line description, "Add" where the
@@ -53,7 +62,13 @@ class MainActivity : ComponentActivity() {
         Entry(R.string.w_battery, R.string.d_battery, BatteryWidget::class.java, false),
         Entry(R.string.w_progress, R.string.d_progress, ProgressWidget::class.java, true),
         Entry(R.string.w_countdown, R.string.d_countdown, CountdownWidget::class.java, true),
+        Entry(R.string.w_streak, R.string.d_streak, StreakWidget::class.java, true),
         Entry(R.string.w_label, R.string.d_label, LabelWidget::class.java, true),
+        Entry(R.string.w_steps, R.string.d_steps, StepsWidget::class.java, true),
+        Entry(R.string.w_nextup, R.string.d_nextup, NextUpWidget::class.java, true),
+        Entry(R.string.w_weather, R.string.d_weather, WeatherWidget::class.java, true),
+        Entry(R.string.w_quote, R.string.d_quote, QuoteWidget::class.java, true),
+        Entry(R.string.w_storage, R.string.d_storage, StorageWidget::class.java, true),
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -63,12 +78,34 @@ class MainActivity : ComponentActivity() {
         setContent {
             NothingTheme {
                 val tier by app.license.tier.collectAsState()
+                val premium = tier.isPremium || DotWidget.isDebugBuild(this)
 
                 Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp)) {
                     DotMatrixText("DOT WIDGETS", size = 28)
                     Text(
-                        if (tier.isPremium) "ALL WIDGETS UNLOCKED" else "3 FREE · UNLOCK ALL FOR ${app.license.catalogue.plus?.price}",
+                        if (premium) "ALL WIDGETS UNLOCKED" else "3 FREE · UNLOCK 9 MORE FOR ${app.license.catalogue.plus?.price}",
                         style = typography.caption, color = colors.accent,
+                    )
+                    Spacer(Modifier.height(20.dp))
+
+                    var style by remember { mutableStateOf(app.style) }
+                    DotMatrixText("STYLE", size = 14)
+                    Spacer(Modifier.height(8.dp))
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        DotWidgetsApp.Style.entries.forEach { s ->
+                            NothingButton(
+                                s.label,
+                                if (style == s) NothingButtonStyle.Solid else NothingButtonStyle.Outline,
+                                Modifier.weight(1f),
+                            ) {
+                                style = s; app.style = s; DotWidget.refreshEverything(this@MainActivity)
+                            }
+                        }
+                    }
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        "Applies to every widget. Circle looks best at 2 × 2 — long-press a widget to resize it.",
+                        style = typography.caption, color = colors.onBackgroundMuted,
                     )
                     Spacer(Modifier.height(20.dp))
 
@@ -76,14 +113,14 @@ class MainActivity : ComponentActivity() {
                         WidgetRow(
                             name = getString(e.name),
                             desc = getString(e.desc),
-                            locked = e.premium && !tier.isPremium,
+                            locked = e.premium && !premium,
                             onAdd = { requestPin(e.cls) },
                         )
                         Spacer(Modifier.height(10.dp))
                     }
 
                     Spacer(Modifier.height(10.dp))
-                    if (!tier.isPremium) {
+                    if (!premium) {
                         NothingButton("UNLOCK ALL · ${app.license.catalogue.plus?.price}", NothingButtonStyle.Accent, Modifier.fillMaxWidth()) {
                             app.license.play.buy(this@MainActivity, uk.nothingsuite.billing.Sku.PLUS)
                         }
