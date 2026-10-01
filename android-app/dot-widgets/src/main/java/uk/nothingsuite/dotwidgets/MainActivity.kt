@@ -130,6 +130,19 @@ class MainActivity : ComponentActivity() {
                         }
                         Spacer(Modifier.height(16.dp))
                     }
+                    if (uk.nothingsuite.dotwidgets.glyph.hasGlyphMatrix()) {
+                        DotMatrixText("GLYPH", size = 14)
+                        Spacer(Modifier.height(6.dp))
+                        Text(
+                            "Five Glyph Toys match the widgets: Streak, Countdown, Steps, Battery, Clock. Add them to the Glyph button here.",
+                            style = typography.caption, color = colors.onBackgroundMuted,
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        NothingButton("MANAGE GLYPH TOYS", NothingButtonStyle.Solid, Modifier.fillMaxWidth()) {
+                            uk.nothingsuite.dotwidgets.glyph.GlyphNow.openToyManager(this@MainActivity)
+                        }
+                        Spacer(Modifier.height(16.dp))
+                    }
                     Text(
                         "Can't see an Add button? Long-press your home screen → Widgets → Dot Widgets.",
                         style = typography.caption, color = colors.onBackgroundMuted,

@@ -44,6 +44,8 @@ class SettingsActivity : ComponentActivity() {
                 var url by remember { mutableStateOf(settings.backendWsUrl) }
                 var secret by remember { mutableStateOf(settings.sharedSecret) }
                 var twilio by remember { mutableStateOf(settings.twilioNumber) }
+                var reject by remember { mutableStateOf(settings.rejectToScreen) }
+                var autoUnknown by remember { mutableStateOf(settings.autoScreenUnknown) }
 
                 Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp)) {
                     DotMatrixText("SETUP", size = 28)
@@ -59,6 +61,23 @@ class SettingsActivity : ComponentActivity() {
 
                     Text("Your Twilio number (+44…)", style = typography.caption)
                     OutlinedTextField(value = twilio, onValueChange = { twilio = it }, modifier = Modifier.fillMaxWidth())
+                    Spacer(Modifier.height(24.dp))
+
+                    DotMatrixText("SCREENING", size = 14)
+                    Spacer(Modifier.height(8.dp))
+                    NothingButton(if (reject) "HAND OVER INSTANTLY (REJECT)" else "KEEP RINGING (5 S NO-ANSWER)", if (reject) NothingButtonStyle.Solid else NothingButtonStyle.Outline, Modifier.fillMaxWidth()) {
+                        reject = !reject; settings.rejectToScreen = reject
+                    }
+                    Text(
+                        if (reject) "Screen declines the call; the network's \"forward if busy\" rule sends it to the assistant in about a second."
+                        else "Screen silences the call; the \"forward if no answer\" rule sends it on after 5 seconds. Use this if your network ignores busy forwarding.",
+                        style = typography.caption,
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    NothingButton(if (autoUnknown) "AUTO-SCREEN UNKNOWN NUMBERS: ON" else "AUTO-SCREEN UNKNOWN NUMBERS: OFF", if (autoUnknown) NothingButtonStyle.Solid else NothingButtonStyle.Outline, Modifier.fillMaxWidth()) {
+                        autoUnknown = !autoUnknown; settings.autoScreenUnknown = autoUnknown
+                    }
+                    Text("Numbers not in your contacts go straight to the assistant without ringing. Needs the Contacts permission.", style = typography.caption)
                     Spacer(Modifier.height(24.dp))
 
                     NothingButton("SAVE", NothingButtonStyle.Solid, Modifier.fillMaxWidth()) {

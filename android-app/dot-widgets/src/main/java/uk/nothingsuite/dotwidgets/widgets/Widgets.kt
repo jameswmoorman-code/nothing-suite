@@ -196,7 +196,7 @@ class StreakWidget : DotWidget() {
             return
         }
         val days = ChronoUnit.DAYS.between(LocalDate.ofEpochDay(epochDay), LocalDate.now()).coerceAtLeast(0)
-        views.ink(context, R.id.days, days.toString(), DotInk.Kind.HERO)
+        views.ink(context, R.id.days, days.toString(), DotInk.Kind.BIG)
         views.inkLabel(context, R.id.unit, if (days == 1L) "DAY" else "DAYS", R.color.dw_red)
         if (isMilestone(days)) {
             // Celebration frame for the day: firework, red note. Widgets can't animate; the Glyph Toy does the show.

@@ -26,4 +26,14 @@
     <string name="d_quote">One short line a day — ours, or your own list.</string>
     <string name="d_storage">How much space is left on the phone.</string>
     <string name="locked">UNLOCK IN APP</string>
+    <string name="toy_streak">Dot Streak</string>
+    <string name="toy_streak_summary">Your streak icon spins, GOOD JOB scrolls, the day count, fireworks. Hold to replay.</string>
+    <string name="toy_countdown">Dot Countdown</string>
+    <string name="toy_countdown_summary">Days to your date on the back of the phone. Hold to replay.</string>
+    <string name="toy_steps">Dot Steps</string>
+    <string name="toy_steps_summary">A ring fills to today\'s steps; a burst when you hit your goal.</string>
+    <string name="toy_battery">Dot Battery</string>
+    <string name="toy_battery_summary">Battery percentage with a bar that fills. Flashes a bolt while charging.</string>
+    <string name="toy_clock">Dot Clock</string>
+    <string name="toy_clock_summary">Hours over minutes, ticking.</string>
 </resources>

@@ -201,7 +201,7 @@ class WeatherWidget : FetchingWidget() {
         val code = p.getInt("weather:code", 0)
         views.setViewVisibility(R.id.icon, android.view.View.VISIBLE)
         views.setImageViewResource(R.id.icon, icon(code))
-        views.ink(context, R.id.temp, "${p.getInt("weather:temp", 0)}°", DotInk.Kind.HERO)
+        views.ink(context, R.id.temp, "${p.getInt("weather:temp", 0)}°", DotInk.Kind.BIG)
         views.inkLabel(context, R.id.sky, sky(code))
         views.inkLabel(context, R.id.town, town, R.color.dw_white)
     }
@@ -307,7 +307,7 @@ class StorageWidget : DotWidget() {
         val gb = 1_000_000_000.0
         val used = 1 - free / total
         views.ink(context, R.id.free, "${(free / gb).toInt()} GB", DotInk.Kind.HERO)
-        views.inkLabel(context, R.id.of, "FREE OF ${(total / gb).toInt()}")
+        views.inkLabel(context, R.id.of, "FREE OF ${(total / gb).toInt()} GB")
         views.inkDots(context, R.id.dots, used, 10, if (used > 0.9) R.color.dw_red else R.color.dw_white)
     }
 }

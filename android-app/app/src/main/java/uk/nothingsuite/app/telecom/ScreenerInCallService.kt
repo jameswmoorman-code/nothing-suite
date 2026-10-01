@@ -24,6 +24,13 @@ class ScreenerInCallService : InCallService() {
         CallRepository.onCallAdded(call)
 
         if (call.state == Call.STATE_RINGING) {
+            val settings = NothingSuiteApp.instance.settings
+            val number = call.details?.handle?.schemeSpecificPart
+            if (settings.autoScreenUnknown && settings.isConfigured && !isInContacts(number)) {
+                // Pixel-style automatic screening: unknown caller never rings through.
+                CallRepository.current.value?.takeIf { it.call == call }?.let { ScreenCallAction.execute(this, it) }
+                return
+            }
             showIncomingCallUi(call)
         }
     }
@@ -32,6 +39,16 @@ class ScreenerInCallService : InCallService() {
         super.onCallRemoved(call)
         CallRepository.onCallRemoved(call)
         stopForeground(STOP_FOREGROUND_REMOVE)
+    }
+
+    /** True when the number matches a contact. Needs READ_CONTACTS; without it everyone is "unknown". */
+    private fun isInContacts(number: String?): Boolean {
+        if (number.isNullOrBlank()) return false
+        if (checkSelfPermission(android.Manifest.permission.READ_CONTACTS) != android.content.pm.PackageManager.PERMISSION_GRANTED) return false
+        val uri = android.net.Uri.withAppendedPath(android.provider.ContactsContract.PhoneLookup.CONTENT_FILTER_URI, android.net.Uri.encode(number))
+        return runCatching {
+            contentResolver.query(uri, arrayOf(android.provider.ContactsContract.PhoneLookup._ID), null, null, null)?.use { it.count > 0 } ?: false
+        }.getOrDefault(false)
     }
 
     private fun showIncomingCallUi(call: Call) {

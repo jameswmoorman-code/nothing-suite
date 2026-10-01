@@ -129,6 +129,16 @@ class CountdownConfigActivity : WidgetConfigActivity() {
             Spacer(Modifier.height(12.dp))
             if (repeat == null) DateButton(dateState) else Text("Date is worked out automatically.", style = typography.caption, color = colors.onBackgroundMuted)
             Spacer(Modifier.height(16.dp))
+            if (uk.nothingsuite.dotwidgets.glyph.hasGlyphMatrix()) {
+                NothingButton("PLAY ON GLYPH", NothingButtonStyle.Outline, Modifier.fillMaxWidth()) {
+                    val r = repeat
+                    val target = if (r != null) CountdownWidget.nextOccurrence(r)
+                        else dateState.selectedDateMillis?.let { Instant.ofEpochMilli(it).atZone(ZoneOffset.UTC).toLocalDate() } ?: java.time.LocalDate.now()
+                    val days = java.time.temporal.ChronoUnit.DAYS.between(java.time.LocalDate.now(), target).coerceAtLeast(0)
+                    uk.nothingsuite.dotwidgets.glyph.GlyphNow.play(this@CountdownConfigActivity, uk.nothingsuite.dotwidgets.glyph.CountdownShow(label.ifBlank { "COUNTDOWN" }, days))
+                }
+                Spacer(Modifier.height(8.dp))
+            }
             NothingButton("SAVE", NothingButtonStyle.Accent, Modifier.fillMaxWidth()) {
                 val millis = dateState.selectedDateMillis ?: return@NothingButton
                 val epochDay = Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).toLocalDate().toEpochDay()
@@ -191,6 +201,14 @@ class StreakConfigActivity : WidgetConfigActivity() {
             Spacer(Modifier.height(6.dp))
             DateButton(dateState)
             Spacer(Modifier.height(16.dp))
+            if (uk.nothingsuite.dotwidgets.glyph.hasGlyphMatrix()) {
+                NothingButton("PLAY ON GLYPH", NothingButtonStyle.Outline, Modifier.fillMaxWidth()) {
+                    val start = dateState.selectedDateMillis?.let { Instant.ofEpochMilli(it).atZone(ZoneOffset.UTC).toLocalDate() } ?: java.time.LocalDate.now()
+                    val days = java.time.temporal.ChronoUnit.DAYS.between(start, java.time.LocalDate.now()).coerceAtLeast(0)
+                    uk.nothingsuite.dotwidgets.glyph.GlyphNow.play(this@StreakConfigActivity, uk.nothingsuite.dotwidgets.glyph.StreakShow(label.ifBlank { "STREAK" }, days, icon))
+                }
+                Spacer(Modifier.height(8.dp))
+            }
             NothingButton("SAVE", NothingButtonStyle.Accent, Modifier.fillMaxWidth()) {
                 val millis = dateState.selectedDateMillis ?: return@NothingButton
                 val epochDay = Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).toLocalDate().toEpochDay()

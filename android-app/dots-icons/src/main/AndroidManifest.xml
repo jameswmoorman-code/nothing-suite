@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.VIBRATE" />
+
+    <!-- Android 11+ hides other apps unless we say what we look for: the launchable apps
+         (to export the list / detect the launcher). Nothing is read beyond names and labels. -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.HOME" />
+        </intent>
+    </queries>
+
+    <application
+        android:allowBackup="true"
+        android:icon="@drawable/ic_launcher"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@android:style/Theme.Material.NoActionBar">
+
+        <!-- Icon-pack handshake: every launcher looks for one of these actions/categories.
+             The XML it then reads is res/xml/appfilter.xml (and assets/appfilter.xml). -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="org.adw.launcher.THEMES" />
+                <action android:name="com.novalauncher.THEME" />
+                <action android:name="com.teslacoilsw.launcher.THEME" />
+                <action android:name="com.anddoes.launcher.THEME" />
+                <action android:name="com.gau.go.launcherex.theme" />
+                <action android:name="net.oneplus.launcher.icons.ACTION_PICK_ICON" />
+                <action android:name="com.dlto.atom.launcher.THEME" />
+                <action android:name="ginlemon.smartlauncher.THEMES" />
+                <action android:name="com.lge.launcher2.THEME" />
+                <action android:name="org.adw.launcher.icons.ACTION_PICK_ICON" />
+                <category android:name="com.fede.launcher.THEME_ICONPACK" />
+                <category android:name="com.anddoes.launcher.THEME" />
+                <category android:name="com.teslacoilsw.launcher.THEME" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

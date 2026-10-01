@@ -44,6 +44,21 @@ class SecureSettings(context: Context) {
         get() = prefs.getBoolean(KEY_GLYPH, true)
         set(v) = prefs.edit { putBoolean(KEY_GLYPH, v) }
 
+    /**
+     * How "Screen" hands the call over. REJECT (default): decline the call so the network's
+     * "forward when busy" rule diverts it at once — the assistant answers in about a second.
+     * SILENCE: keep it ringing and rely on "forward if no answer" (5 s) — for carriers that
+     * don't forward on busy.
+     */
+    var rejectToScreen: Boolean
+        get() = prefs.getBoolean(KEY_REJECT, true)
+        set(v) = prefs.edit { putBoolean(KEY_REJECT, v) }
+
+    /** Screen calls from numbers not in Contacts without asking (like Pixel's automatic screening). */
+    var autoScreenUnknown: Boolean
+        get() = prefs.getBoolean(KEY_AUTO_UNKNOWN, false)
+        set(v) = prefs.edit { putBoolean(KEY_AUTO_UNKNOWN, v) }
+
     val isConfigured: Boolean get() = backendWsUrl.startsWith("wss://") && sharedSecret.isNotBlank()
 
     /**
@@ -64,5 +79,7 @@ class SecureSettings(context: Context) {
         const val KEY_SECRET = "shared_secret"
         const val KEY_TWILIO = "twilio_number"
         const val KEY_GLYPH = "glyph_tracker"
+        const val KEY_REJECT = "reject_to_screen"
+        const val KEY_AUTO_UNKNOWN = "auto_screen_unknown"
     }
 }

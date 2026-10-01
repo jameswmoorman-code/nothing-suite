@@ -25,6 +25,7 @@ object DotInk {
 
     enum class Kind(val sp: Float, val light: Boolean, val spacing: Float) {
         HERO(56f, false, 0.12f),
+        BIG(44f, false, 0.12f),   // hero-with-icon cards (Streak, Weather)
         TITLE(32f, false, 0.12f),
         BODY(20f, false, 0.12f),
         LABEL(14f, true, 0.2f),
@@ -49,7 +50,9 @@ object DotInk {
             this.color = color
         }
         val s = text.uppercase()
-        val natural = ceil(paint.measureText(s)).toInt().coerceAtLeast(1)
+        if (s.isBlank()) return Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888) // nothing to draw, no smudge
+        // measureText under-reports letter-spaced text slightly; pad so single lines never wrap by accident
+        val natural = ceil(paint.measureText(s) * 1.08f + 8).toInt().coerceAtLeast(1)
         val maxW = maxWidthDp?.let { (it * dm.density).toInt() } ?: Int.MAX_VALUE
         val width = min(natural, maxW)
         val layout = StaticLayout.Builder.obtain(s, 0, s.length, paint, width)

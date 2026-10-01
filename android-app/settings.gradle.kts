@@ -18,3 +18,5 @@ include(":app")                  // Dialer + AI call screener + Glyph progress t
 include(":anti-theft-module")    // Shade Guard — biometric gate on Quick Settings while locked
 include(":music-tracker-module") // Now Playing — ambient music recognition widget
 include(":dot-widgets")          // Dot Widgets — dot-matrix home-screen widgets for ANY Android phone (roadmap #1)
+include(":glyph-tracker")        // Glyph Tracker — deliveries, rides, trains on the Glyph (roadmap #3)
+include(":dots-icons")           // Dots Icons — dot-matrix icon pack for any launcher (roadmap #2)
