@@ -1,11 +1,14 @@
 import WebSocket from 'ws';
+import { applyAction } from '../twilio/callControl.js';
 
 /**
  * Fan-out of transcript events to every connected phone (usually one).
  *
- * Wire format (JSON, one object per frame):
- *   { type: 'call_started' | 'delta' | 'final' | 'call_ended' | 'error',
+ * Server → phone (JSON, one object per frame):
+ *   { type: 'hello' | 'call_started' | 'assistant' | 'delta' | 'final' | 'call_ended' | 'error',
  *     callSid, from, text?, ts }
+ * Phone → server:
+ *   { type: 'action', callSid, action: 'ask_reason'|'callback'|'message'|'hangup'|'connect'|'say', text?, to? }
  */
 export class AppBroadcaster {
   #wss;
@@ -17,6 +20,17 @@ export class AppBroadcaster {
       ws.isAlive = true;
       ws.on('pong', () => (ws.isAlive = true));
       ws.send(JSON.stringify({ type: 'hello', ts: Date.now() }));
+      ws.on('message', async (raw) => {
+        let msg;
+        try { msg = JSON.parse(raw.toString()); } catch { return; }
+        if (msg.type !== 'action') return;
+        try {
+          await applyAction(msg, this);
+        } catch (e) {
+          console.warn(`[action] failed: ${e.message}`);
+          ws.send(JSON.stringify({ type: 'error', callSid: msg.callSid, text: e.message, ts: Date.now() }));
+        }
+      });
     });
 
     // Keep-alive so mobile networks don't silently drop the socket.

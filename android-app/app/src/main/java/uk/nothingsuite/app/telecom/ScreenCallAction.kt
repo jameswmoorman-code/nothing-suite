@@ -27,7 +27,7 @@ object ScreenCallAction {
     fun execute(context: Context, info: CallRepository.CallInfo) {
         CallRepository.markScreening(info.number)
 
-        if (NothingSuiteApp.instance.settings.rejectToScreen) reject(info.call) else silence(info.call)
+        if (NothingSuiteApp.instance.settings.rejectToScreen) reject(info.call) else silence(context)
 
         val intent = Intent(context, LiveTranscriptActivity::class.java)
             .putExtra(LiveTranscriptActivity.EXTRA_CALLER, info.number)
@@ -41,9 +41,9 @@ object ScreenCallAction {
     }
 
     /** Stops the ringtone/vibration but keeps the call alive for the network's no-answer timer. */
-    private fun silence(call: Call) {
-        // Call.silence() exists from API 23. Telecom silences the ringer for
-        // this call only; the caller still hears ringing on their end.
-        runCatching { call.silence() }
+    private fun silence(context: Context) {
+        // The ringer belongs to Telecom, not the Call. As the default dialer we may
+        // silence it; the caller still hears ringing on their end.
+        runCatching { context.getSystemService(android.telecom.TelecomManager::class.java).silenceRinger() }
     }
 }

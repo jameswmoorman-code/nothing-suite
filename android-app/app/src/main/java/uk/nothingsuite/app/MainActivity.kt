@@ -38,6 +38,9 @@ class MainActivity : ComponentActivity() {
 
     private val roleManager by lazy { DialerRoleManager(this) }
     private var isDefault by mutableStateOf(false)
+    private var configured by mutableStateOf(false)
+    private var canPopUp by mutableStateOf(true)
+    private var canPopUpLocked by mutableStateOf(true)
     private val roleLauncher = roleManager.register(this) { isDefault = it }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -47,7 +50,6 @@ class MainActivity : ComponentActivity() {
         setContent {
             NothingTheme {
                 val tier by app.license.tier.collectAsState()
-                var configured by remember { mutableStateOf(app.settings.isConfigured) }
 
                 Column(Modifier.fillMaxSize().padding(20.dp)) {
                     DotMatrixText("NOTHING SUITE", size = 28)
@@ -82,20 +84,39 @@ class MainActivity : ComponentActivity() {
                             Spacer(Modifier.height(12.dp))
                             NothingButton("OPEN SETUP", NothingButtonStyle.Solid, Modifier.fillMaxWidth()) {
                                 startActivity(Intent(this@MainActivity, SettingsActivity::class.java))
-                                configured = app.settings.isConfigured
                             }
                         }
                     }
                     Spacer(Modifier.height(12.dp))
 
+                    if (!canPopUp || !canPopUpLocked) {
+                        NothingCard(Modifier.fillMaxWidth()) {
+                            Column(Modifier.padding(16.dp)) {
+                                DotMatrixText("ALLOW POP-UP", size = 14)
+                                Spacer(Modifier.height(8.dp))
+                                Text(
+                                    if (!canPopUp) "So the live screen opens by itself while you're using the phone, allow \"Display over other apps\" and come back."
+                                    else "Allow full-screen notifications so the live screen opens on the lock screen.",
+                                    style = typography.body,
+                                )
+                                Spacer(Modifier.height(12.dp))
+                                NothingButton("ALLOW", NothingButtonStyle.Accent, Modifier.fillMaxWidth()) {
+                                    val svc = uk.nothingsuite.app.transcript.ConciergeService
+                                    runCatching { startActivity(if (!canPopUp) svc.popUpSettingsIntent(this@MainActivity) else svc.fullScreenSettingsIntent(this@MainActivity)) }
+                                }
+                            }
+                        }
+                        Spacer(Modifier.height(12.dp))
+                    }
+
                     NothingCard(Modifier.fillMaxWidth()) {
                         Column(Modifier.padding(16.dp)) {
-                            DotMatrixText("3 · GLYPH TRACKER", size = 14)
+                            DotMatrixText("3 · LIVE VIEW", size = 14)
                             Spacer(Modifier.height(8.dp))
-                            Text("Allow notification access so deliveries show on the Glyph", style = typography.body)
+                            Text(if (configured) "On duty. When a call reaches the concierge this screen pops up by itself; open it any time to watch." else "Finish Setup first.", style = typography.body)
                             Spacer(Modifier.height(12.dp))
-                            NothingButton("NOTIFICATION ACCESS", NothingButtonStyle.Outline, Modifier.fillMaxWidth()) {
-                                startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+                            NothingButton("OPEN LIVE VIEW", NothingButtonStyle.Outline, Modifier.fillMaxWidth(), enabled = configured) {
+                                startActivity(Intent(this@MainActivity, uk.nothingsuite.app.transcript.LiveTranscriptActivity::class.java))
                             }
                         }
                     }
@@ -131,5 +152,9 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         isDefault = roleManager.isDefaultDialer
+        configured = NothingSuiteApp.instance.settings.isConfigured
+        canPopUp = uk.nothingsuite.app.transcript.ConciergeService.canPopUp(this)
+        canPopUpLocked = uk.nothingsuite.app.transcript.ConciergeService.canPopUpWhenLocked(this)
+        if (configured) uk.nothingsuite.app.transcript.ConciergeService.ensureRunning(this)
     }
 }

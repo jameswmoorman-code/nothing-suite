@@ -35,10 +35,11 @@ dependencies {
     implementation(project(":core-design"))
     implementation(project(":core-billing"))
 
-    // Official Glyph SDK: only wired in once the .aar has been dropped into ../glyph-sdk,
-    // so the rest of the project syncs and builds without it.
-    val glyphAar = rootProject.file("glyph-sdk/glyph-sdk.aar")
-    if (glyphAar.exists()) implementation(files(glyphAar))
+    // Glyph SDK 2.0 (EULA, git-ignored) — see android-app/glyph-sdk/GLYPH-SDK-LICENCE.md.
+    // The screener only pulses the Glyph while screening; the full tracker lives in :glyph-tracker.
+    val glyphSdk = rootProject.file("glyph-sdk/glyph-matrix-sdk-2.0.aar")
+    if (!glyphSdk.exists()) throw GradleException("Missing ${glyphSdk.path} — see android-app/glyph-sdk/GLYPH-SDK-LICENCE.md")
+    implementation(files(glyphSdk))
 
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.activity:activity-compose:1.9.2")

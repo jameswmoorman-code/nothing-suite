@@ -1,10 +1,15 @@
 import { Router } from 'express';
 import twilio from 'twilio';
 import { config, publicWsUrl } from '../config.js';
+import { registry } from './callControl.js';
 
 const { VoiceResponse } = twilio.twiml;
 
 export const voiceRouter = Router();
+
+/** Set by index.js so the webhook can tell the phone the instant a call lands. */
+let broadcaster = null;
+export function attachBroadcaster(b) { broadcaster = b; }
 
 /**
  * Verifies X-Twilio-Signature so nobody else can trigger media streams
@@ -31,6 +36,15 @@ function twilioSignatureGuard(req, res, next) {
 voiceRouter.post('/voice', twilioSignatureGuard, (req, res) => {
   const { From = 'unknown', CallSid = '', ForwardedFrom = '' } = req.body;
   console.log(`[voice] incoming CallSid=${CallSid} from=${From} forwardedFrom=${ForwardedFrom}`);
+
+  // Tell the phone NOW — the media stream (and so mediaStream.js's own
+  // call_started) only opens after the greeting has finished playing, which
+  // is several seconds too late to pop the live screen.
+  const { resumed } = registry.start(CallSid, From);
+  if (!resumed && broadcaster) {
+    broadcaster.send({ type: 'call_started', callSid: CallSid, from: From });
+    broadcaster.send({ type: 'assistant', callSid: CallSid, from: From, text: config.greetingText });
+  }
 
   const twiml = new VoiceResponse();
   twiml.say({ voice: 'Polly.Amy' }, config.greetingText);

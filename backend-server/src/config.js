@@ -39,6 +39,10 @@ export const config = Object.freeze({
   },
 
   appSharedSecret: required('APP_SHARED_SECRET'),
+  /** Your Twilio number (E.164). Used as caller ID when connecting a screened call through. */
+  twilioNumber: process.env.TWILIO_NUMBER ?? '',
+  /** Your own mobile (E.164). "Take the call" dials this. The app can override it per action. */
+  userNumber: process.env.USER_NUMBER ?? '',
   greetingText:
     process.env.GREETING_TEXT ??
     'Hi, this call is being screened. Please say who you are and why you are calling.',

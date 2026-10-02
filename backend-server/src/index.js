@@ -18,7 +18,7 @@ import express from 'express';
 import { WebSocketServer } from 'ws';
 
 import { config } from './config.js';
-import { voiceRouter } from './twilio/voiceWebhook.js';
+import { voiceRouter, attachBroadcaster } from './twilio/voiceWebhook.js';
 import { handleTwilioMediaSocket } from './twilio/mediaStream.js';
 import { AppBroadcaster } from './app/appSocket.js';
 
@@ -35,6 +35,7 @@ const server = http.createServer(app);
 const twilioWss = new WebSocketServer({ noServer: true });
 const appWss = new WebSocketServer({ noServer: true });
 const broadcaster = new AppBroadcaster(appWss);
+attachBroadcaster(broadcaster);
 
 server.on('upgrade', (req, socket, head) => {
   const url = new URL(req.url, `http://${req.headers.host}`);

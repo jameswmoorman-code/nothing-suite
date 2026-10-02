@@ -35,11 +35,11 @@ class GlyphController(private val context: Context) {
         override fun onServiceConnected(name: ComponentName?) {
             val gm = manager ?: return
             val ok = when {
-                Common.is20111() -> gm.register(Common.DEVICE_20111)   // Phone (1)
-                Common.is22111() -> gm.register(Common.DEVICE_22111)   // Phone (2)
-                Common.is23111() -> gm.register(Common.DEVICE_23111)   // Phone (2a)
-                Common.is23113() -> gm.register(Common.DEVICE_23113)   // Phone (2a) Plus
-                Common.is24111() -> gm.register(Common.DEVICE_24111)   // Phone (3a) / (3a) Pro
+                Common.is20111() -> gm.register(Glyph.DEVICE_20111)   // Phone (1)
+                Common.is22111() -> gm.register(Glyph.DEVICE_22111)   // Phone (2)
+                Common.is23111() -> gm.register(Glyph.DEVICE_23111)   // Phone (2a)
+                Common.is23113() -> gm.register(Glyph.DEVICE_23113)   // Phone (2a) Plus
+                Common.is24111() -> gm.register(Glyph.DEVICE_24111)   // Phone (3a) / (3a) Pro
                 else -> false
             }
             if (ok) {

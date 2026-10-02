@@ -31,8 +31,12 @@ import uk.nothingsuite.design.components.NothingButtonStyle
 /** BYOK entry: backend URL, shared secret, Twilio number, and the one-tap forwarding dialer. */
 class SettingsActivity : ComponentActivity() {
     /** Opens the native dialer with the code pre-filled. The user presses call — by design. */
+    /** Network codes (*67*…#) are handled by the phone framework, so place them directly rather than
+     *  via ACTION_DIAL — which, now we are the default dialer, would just bounce back into this app. */
     private fun dial(code: String) {
-        startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:${Uri.encode(code)}")))
+        val uri = Uri.parse("tel:${Uri.encode(code)}")
+        val ok = runCatching { startActivity(Intent(Intent.ACTION_CALL, uri)); true }.getOrDefault(false)
+        if (!ok) runCatching { startActivity(Intent(Intent.ACTION_DIAL, uri).setPackage("com.nothing.dialer")) }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -44,6 +48,7 @@ class SettingsActivity : ComponentActivity() {
                 var url by remember { mutableStateOf(settings.backendWsUrl) }
                 var secret by remember { mutableStateOf(settings.sharedSecret) }
                 var twilio by remember { mutableStateOf(settings.twilioNumber) }
+                var mine by remember { mutableStateOf(settings.myNumber) }
                 var reject by remember { mutableStateOf(settings.rejectToScreen) }
                 var autoUnknown by remember { mutableStateOf(settings.autoScreenUnknown) }
 
@@ -52,15 +57,19 @@ class SettingsActivity : ComponentActivity() {
                     Spacer(Modifier.height(24.dp))
 
                     Text("Your backend (wss://…/app)", style = typography.caption)
-                    OutlinedTextField(value = url, onValueChange = { url = it }, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(value = url, onValueChange = { url = it; settings.backendWsUrl = it }, keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(capitalization = androidx.compose.ui.text.input.KeyboardCapitalization.None, autoCorrectEnabled = false, keyboardType = androidx.compose.ui.text.input.KeyboardType.Uri), modifier = Modifier.fillMaxWidth(), singleLine = true, placeholder = { Text("wss://…ngrok-free.dev/app") })
                     Spacer(Modifier.height(12.dp))
 
                     Text("Shared secret (APP_SHARED_SECRET)", style = typography.caption)
-                    OutlinedTextField(value = secret, onValueChange = { secret = it }, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(value = secret, onValueChange = { secret = it; settings.sharedSecret = it }, keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(capitalization = androidx.compose.ui.text.input.KeyboardCapitalization.None, autoCorrectEnabled = false, keyboardType = androidx.compose.ui.text.input.KeyboardType.Password), modifier = Modifier.fillMaxWidth(), singleLine = true, placeholder = { Text("from the server's .env") })
                     Spacer(Modifier.height(12.dp))
 
                     Text("Your Twilio number (+44…)", style = typography.caption)
-                    OutlinedTextField(value = twilio, onValueChange = { twilio = it }, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(value = twilio, onValueChange = { twilio = it; settings.twilioNumber = it }, keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Phone), modifier = Modifier.fillMaxWidth(), singleLine = true, placeholder = { Text("+44…") })
+                    Spacer(Modifier.height(12.dp))
+
+                    Text("Your own mobile (+44…) — TAKE THE CALL rings this", style = typography.caption)
+                    OutlinedTextField(value = mine, onValueChange = { mine = it; settings.myNumber = it }, modifier = Modifier.fillMaxWidth(), singleLine = true, placeholder = { Text("+447…") }, keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Phone))
                     Spacer(Modifier.height(24.dp))
 
                     DotMatrixText("SCREENING", size = 14)
@@ -80,10 +89,9 @@ class SettingsActivity : ComponentActivity() {
                     Text("Numbers not in your contacts go straight to the assistant without ringing. Needs the Contacts permission.", style = typography.caption)
                     Spacer(Modifier.height(24.dp))
 
-                    NothingButton("SAVE", NothingButtonStyle.Solid, Modifier.fillMaxWidth()) {
-                        settings.backendWsUrl = url
-                        settings.sharedSecret = secret
-                        settings.twilioNumber = twilio
+                    NothingButton("DONE", NothingButtonStyle.Solid, Modifier.fillMaxWidth()) {
+                        uk.nothingsuite.app.transcript.ConciergeLink.restart(settings)
+                        uk.nothingsuite.app.transcript.ConciergeService.ensureRunning(this@SettingsActivity)
                         finish()
                     }
                     Spacer(Modifier.height(12.dp))

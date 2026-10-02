@@ -1,4 +1,6 @@
 import { createTranscriber } from '../transcribers/index.js';
+import { registry } from './callControl.js';
+import { config } from '../config.js';
 
 /**
  * One Twilio Media Stream == one live screened call.
@@ -34,16 +36,20 @@ export function handleTwilioMediaSocket(ws, broadcaster) {
 
         transcriber = createTranscriber({
           onDelta: (text) => broadcaster.send({ type: 'delta', callSid, from, text }),
-          onFinal: (text) => broadcaster.send({ type: 'final', callSid, from, text }),
-          onError: (err) => broadcaster.send({ type: 'error', callSid, from, text: String(err) }),
+          onFinal: (text) => { console.log(`[transcript] ${from}: ${text}`); broadcaster.send({ type: 'final', callSid, from, text }); },
+          onError: (err) => { console.warn(`[transcriber] ${err}`); broadcaster.send({ type: 'error', callSid, from, text: String(err) }); },
         });
         await transcriber.connect();
-        broadcaster.send({ type: 'call_started', callSid, from });
+        const { resumed } = registry.start(callSid, from);
+        if (!resumed) {
+          broadcaster.send({ type: 'call_started', callSid, from });
+          broadcaster.send({ type: 'assistant', callSid, from, text: config.greetingText });
+        }
         break;
       }
 
       case 'media':
-        if (transcriber?.ready) {
+        if (transcriber) {
           transcriber.appendUlawBase64(msg.media.payload);
           mediaFrames += 1;
         }
@@ -67,6 +73,8 @@ export function handleTwilioMediaSocket(ws, broadcaster) {
     if (done) return;
     done = true;
     transcriber?.close();
-    broadcaster.send({ type: 'call_ended', callSid, from, text: reason });
+    const finalReason = registry.stop(callSid, reason);
+    if (finalReason === null) return;               // the concierge is mid-sentence; stream reconnects shortly
+    broadcaster.send({ type: 'call_ended', callSid, from, text: finalReason });
   }
 }

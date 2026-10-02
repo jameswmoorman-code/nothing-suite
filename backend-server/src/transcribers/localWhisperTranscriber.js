@@ -29,6 +29,8 @@ export class LocalWhisperTranscriber {
   #inSpeech = false;
 
   ready = false;
+  /** Audio that arrived before the model finished loading; replayed once ready. */
+  #pending = [];
 
   constructor(handlers) {
     this.#handlers = handlers;
@@ -60,6 +62,8 @@ export class LocalWhisperTranscriber {
         }
         if (msg.event === 'ready') {
           this.ready = true;
+          const queued = this.#pending; this.#pending = [];
+          for (const b64 of queued) this.appendUlawBase64(b64);
           resolve();
         } else if (msg.event === 'result') {
           const text = (msg.text ?? '').trim();
@@ -75,7 +79,7 @@ export class LocalWhisperTranscriber {
   }
 
   appendUlawBase64(base64Payload) {
-    if (!this.ready) return;
+    if (!this.ready) { if (this.#pending.length < 3000) this.#pending.push(base64Payload); return; } // ~60 s
     const pcm = ulawToPcm16(Buffer.from(base64Payload, 'base64'));
     const ms = (pcm.length / 2 / SAMPLE_RATE) * 1000;
     const loud = rms(pcm) > VAD_THRESHOLD;

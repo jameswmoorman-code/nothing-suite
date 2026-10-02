@@ -29,7 +29,7 @@ class SecureSettings(context: Context) {
     /** e.g. wss://example.ngrok-free.app/app */
     var backendWsUrl: String
         get() = prefs.getString(KEY_BACKEND, "") ?: ""
-        set(v) = prefs.edit { putString(KEY_BACKEND, v.trim()) }
+        set(v) = prefs.edit { putString(KEY_BACKEND, normaliseWs(v)) }
 
     var sharedSecret: String
         get() = prefs.getString(KEY_SECRET, "") ?: ""
@@ -39,6 +39,11 @@ class SecureSettings(context: Context) {
     var twilioNumber: String
         get() = prefs.getString(KEY_TWILIO, "") ?: ""
         set(v) = prefs.edit { putString(KEY_TWILIO, v.trim()) }
+
+    /** Your own mobile (E.164). "Take the call" tells the concierge to ring this. */
+    var myNumber: String
+        get() = prefs.getString(KEY_MY_NUMBER, "") ?: ""
+        set(v) = prefs.edit { putString(KEY_MY_NUMBER, v.filter { it.isDigit() || it == '+' }) }
 
     var glyphTrackerEnabled: Boolean
         get() = prefs.getBoolean(KEY_GLYPH, true)
@@ -61,6 +66,16 @@ class SecureSettings(context: Context) {
 
     val isConfigured: Boolean get() = backendWsUrl.startsWith("wss://") && sharedSecret.isNotBlank()
 
+    /** Phones auto-capitalise and add spaces; accept https:// too and turn it into wss://. */
+    private fun normaliseWs(raw: String): String {
+        var v = raw.trim().replace(" ", "")
+        v = v.replaceFirst(Regex("^(?i)https://"), "wss://").replaceFirst(Regex("^(?i)wss://"), "wss://")
+            .replaceFirst(Regex("^(?i)http://"), "wss://").replaceFirst(Regex("^(?i)ws://"), "wss://")   // ngrok only speaks TLS
+        if (v.isNotBlank() && !v.contains("://")) v = "wss://$v"
+        if (v.startsWith("wss://") && !v.endsWith("/app")) v = v.trimEnd('/') + "/app"
+        return v
+    }
+
     /**
      * GSM "forward when no answer" registration, 5-second timer (the minimum).
      * This is the rule screening relies on: the app silences the call, the
@@ -78,6 +93,7 @@ class SecureSettings(context: Context) {
         const val KEY_BACKEND = "backend_ws_url"
         const val KEY_SECRET = "shared_secret"
         const val KEY_TWILIO = "twilio_number"
+        const val KEY_MY_NUMBER = "my_number"
         const val KEY_GLYPH = "glyph_tracker"
         const val KEY_REJECT = "reject_to_screen"
         const val KEY_AUTO_UNKNOWN = "auto_screen_unknown"
