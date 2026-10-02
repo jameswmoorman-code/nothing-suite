@@ -5,16 +5,20 @@ import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -23,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import uk.nothingsuite.app.NothingSuiteApp
 import uk.nothingsuite.design.NothingTheme
+import uk.nothingsuite.design.NothingTheme.colors
 import uk.nothingsuite.design.NothingTheme.typography
 import uk.nothingsuite.design.components.DotMatrixText
 import uk.nothingsuite.design.components.NothingButton
@@ -41,6 +46,7 @@ class SettingsActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        uk.nothingsuite.app.settings.ConciergePrefs.init()
         val settings = NothingSuiteApp.instance.settings
 
         setContent {
@@ -53,6 +59,7 @@ class SettingsActivity : ComponentActivity() {
                 var autoUnknown by remember { mutableStateOf(settings.autoScreenUnknown) }
                 var glyphId by remember { mutableStateOf(settings.glyphCallerId) }
                 var desk by remember { mutableStateOf(settings.deskMode) }
+                var alert by remember { mutableStateOf(settings.alertSound) }
 
                 Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp)) {
                     DotMatrixText("SETUP", size = 28)
@@ -74,6 +81,43 @@ class SettingsActivity : ComponentActivity() {
                     OutlinedTextField(value = mine, onValueChange = { mine = it; settings.myNumber = it }, modifier = Modifier.fillMaxWidth(), singleLine = true, placeholder = { Text("+447…") }, keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Phone))
                     Spacer(Modifier.height(24.dp))
 
+                    DotMatrixText("VOICE", size = 14)
+                    Spacer(Modifier.height(8.dp))
+                    val prefs by uk.nothingsuite.app.settings.ConciergePrefs.state.collectAsState()
+                    var greetingDraft by remember(prefs.greeting) { mutableStateOf(prefs.greeting ?: "") }
+                    if (!prefs.loaded) {
+                        Text(prefs.message ?: "Fetching the voice list from the concierge…", style = typography.caption, color = if (prefs.message != null) colors.accent else colors.onBackgroundMuted)
+                    } else {
+                        prefs.voices.forEach { v ->
+                            val chosen = v.id == prefs.voice
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                NothingButton(
+                                    (if (chosen) "● " else "") + v.label.uppercase() + "  ·  " + v.desc.uppercase(),
+                                    if (chosen) NothingButtonStyle.Solid else NothingButtonStyle.Outline, Modifier.weight(1f),
+                                ) { uk.nothingsuite.app.settings.ConciergePrefs.setVoice(v.id) }
+                                NothingButton("HEAR", NothingButtonStyle.Outline, Modifier.width(84.dp)) { uk.nothingsuite.app.settings.ConciergePrefs.preview(v.id) }
+                            }
+                            Spacer(Modifier.height(6.dp))
+                        }
+                        NothingButton("HEAR ALL TEN (ONE CALL, ~2 MIN)", NothingButtonStyle.Outline, Modifier.fillMaxWidth()) { uk.nothingsuite.app.settings.ConciergePrefs.preview("all") }
+                        Spacer(Modifier.height(6.dp))
+                        Spacer(Modifier.height(6.dp))
+                        OutlinedTextField(
+                            value = greetingDraft, onValueChange = { greetingDraft = it },
+                            label = { Text("WHAT CALLERS HEAR FIRST") }, minLines = 2, modifier = Modifier.fillMaxWidth(),
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            NothingButton("SAVE GREETING", NothingButtonStyle.Outline, Modifier.weight(1f), enabled = greetingDraft.trim() != (prefs.greeting ?: "") && greetingDraft.trim().length >= 5) {
+                                uk.nothingsuite.app.settings.ConciergePrefs.setGreeting(greetingDraft.trim())
+                            }
+                            NothingButton("HEAR GREETING", NothingButtonStyle.Accent, Modifier.weight(1f)) { uk.nothingsuite.app.settings.ConciergePrefs.preview() }
+                        }
+                        Text("HEAR rings MY NUMBER and reads a sample in that voice without changing your choice (about a penny a go). The better \"neural\" voices cost roughly 0.3p per greeting instead of 0.08p.", style = typography.caption)
+                        prefs.message?.let { Spacer(Modifier.height(4.dp)); Text(it, style = typography.caption, color = colors.accent) }
+                    }
+                    Spacer(Modifier.height(24.dp))
+
                     DotMatrixText("SCREENING", size = 14)
                     Spacer(Modifier.height(8.dp))
                     NothingButton(if (reject) "HAND OVER INSTANTLY (REJECT)" else "KEEP RINGING (5 S NO-ANSWER)", if (reject) NothingButtonStyle.Solid else NothingButtonStyle.Outline, Modifier.fillMaxWidth()) {
@@ -89,6 +133,11 @@ class SettingsActivity : ComponentActivity() {
                         autoUnknown = !autoUnknown; settings.autoScreenUnknown = autoUnknown
                     }
                     Text("Numbers not in your contacts go straight to the assistant without ringing. Needs the Contacts permission.", style = typography.caption)
+                    Spacer(Modifier.height(12.dp))
+                    NothingButton(if (alert) "ALERT SOUND: ON" else "ALERT SOUND: OFF", if (alert) NothingButtonStyle.Solid else NothingButtonStyle.Outline, Modifier.fillMaxWidth()) {
+                        alert = !alert; settings.alertSound = alert
+                    }
+                    Text("Chime and buzz when a call reaches the concierge, so you notice the live screen. Follows Do Not Disturb.", style = typography.caption)
                     Spacer(Modifier.height(12.dp))
                     NothingButton(if (desk) "DESK MODE: ON" else "DESK MODE: OFF", if (desk) NothingButtonStyle.Solid else NothingButtonStyle.Outline, Modifier.fillMaxWidth()) {
                         desk = !desk; settings.deskMode = desk

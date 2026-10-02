@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import twilio from 'twilio';
 import { config, publicWsUrl } from '../config.js';
+import { say } from '../prefs.js';
 
 const { VoiceResponse } = twilio.twiml;
 const client = twilio(config.twilio.accountSid, config.twilio.authToken);
@@ -133,7 +134,7 @@ async function humanDetected(s, line) {
   tell(s, { text: `Someone answered: “${line}”` });
   // Tell the agent, keep them in the conference (stream restarts with the new TwiML).
   const vr = new VoiceResponse();
-  vr.say({ voice: 'Polly.Amy' }, "Hello — please hold for just a moment, I'm connecting you now.");
+  say(vr, "Hello — please hold for just a moment, I'm connecting you now.");
   streamTwiml(vr, s);
   conferenceTwiml(vr, s, { endOnExit: true });
   await client.calls(s.companySid).update({ twiml: vr.toString() });
@@ -152,7 +153,7 @@ async function humanDetected(s, line) {
     if (s.state !== 'human') return clearInterval(nag);
     try {
       const vr2 = new VoiceResponse();
-      vr2.say({ voice: 'Polly.Amy' }, 'Thanks for holding, just one more moment.');
+      say(vr2, 'Thanks for holding, just one more moment.');
       streamTwiml(vr2, s); conferenceTwiml(vr2, s, { endOnExit: true });
       await client.calls(s.companySid).update({ twiml: vr2.toString() });
     } catch { clearInterval(nag); }
@@ -182,7 +183,7 @@ export function holdRoutes(router, guard) {
     const vr = new VoiceResponse();
     if (!s) { vr.say('Sorry, that call has expired.'); return res.type('text/xml').send(vr.toString()); }
     s.state = 'connecting'; tell(s, { text: `Calling ${s.to}…` });
-    vr.say({ voice: 'Polly.Amy' }, 'Connecting you now. Tap hold for me whenever you are stuck in a queue.');
+    say(vr, 'Connecting you now. Tap hold for me whenever you are stuck in a queue.');
     const d = vr.dial({ callerId: config.twilioNumber, action: `${config.publicUrl}/hold/dial-done?session=${s.id}`, timeout: 40 });
     d.number({ statusCallback: `${config.publicUrl}/hold/status?session=${s.id}&leg=company`, statusCallbackEvent: ['answered', 'completed'] }, s.to);
     res.type('text/xml').send(vr.toString());
@@ -194,10 +195,10 @@ export function holdRoutes(router, guard) {
     const s = sessions.get(req.query.session);
     const vr = new VoiceResponse();
     if (s && s.state === 'holding') {
-      vr.say({ voice: 'Polly.Amy' }, "I'll stay on the line and ring you the moment a person answers. Goodbye for now.");
+      say(vr, "I'll stay on the line and ring you the moment a person answers. Goodbye for now.");
     } else if (s) {
       const st = req.body.DialCallStatus;
-      vr.say({ voice: 'Polly.Amy' }, st === 'no-answer' ? 'They did not answer.' : st === 'busy' ? 'The line is busy.' : 'The call has ended.');
+      say(vr, st === 'no-answer' ? 'They did not answer.' : st === 'busy' ? 'The line is busy.' : 'The call has ended.');
       endSession(s, st === 'no-answer' ? 'they did not answer' : 'call ended');
     }
     vr.hangup();
@@ -210,7 +211,7 @@ export function holdRoutes(router, guard) {
     const vr = new VoiceResponse();
     if (!s || s.state !== 'human') { vr.say('Sorry, they have gone.'); vr.hangup(); return res.type('text/xml').send(vr.toString()); }
     s.state = 'joined'; if (s.nag) clearInterval(s.nag); tell(s, { text: 'You are through.' });
-    vr.say({ voice: 'Polly.Amy' }, 'They are on the line.');
+    say(vr, 'They are on the line.');
     conferenceTwiml(vr, s, { endOnExit: true });
     res.type('text/xml').send(vr.toString());
   });

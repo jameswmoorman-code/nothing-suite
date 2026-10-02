@@ -26,6 +26,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 import androidx.lifecycle.ViewModelProvider
 import uk.nothingsuite.app.NothingSuiteApp
 import uk.nothingsuite.design.NothingTheme
@@ -64,6 +66,19 @@ class LiveTranscriptActivity : ComponentActivity() {
         window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         getSystemService(android.app.NotificationManager::class.java).cancel(ConciergeService.CALL_NOTIFICATION_ID)
         CallBanner.hide(this)
+        // Auto-close ~8 s after the call ends. Lives here (not in the composable) so a redraw
+        // can't cancel it, and closes the whole task so nothing is left behind on the lock screen.
+        lifecycleScope.launch {
+            var closing = false
+            vm.state.collect { st ->
+                if (st.status == ScreeningStatus.Ended && !closing) {
+                    closing = true
+                    android.util.Log.i("LiveScreen", "call ended → closing in 8 s")
+                    kotlinx.coroutines.delay(8_000)
+                    if (!isFinishing) finishAndRemoveTask()
+                }
+            }
+        }
         setContent {
             NothingTheme {
                 val state by vm.state.collectAsState()
@@ -89,10 +104,6 @@ private fun TranscriptScreen(state: TranscriptUiState, vm: TranscriptViewModel, 
     }
     val live = state.status == ScreeningStatus.Live
     // The call's over: give a moment to read the last line, then get out of the way.
-    LaunchedEffect(state.status) {
-        // Long enough to read the last line — and for the Glyph to show END, then the call count.
-        if (state.status == ScreeningStatus.Ended) { kotlinx.coroutines.delay(10_000); onClose() }
-    }
 
     Column(Modifier.fillMaxSize().padding(20.dp)) {
         DotMatrixText(

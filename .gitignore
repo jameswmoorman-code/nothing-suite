@@ -19,3 +19,4 @@ __pycache__/
 
 # local bin folder (Cowork moves files here instead of deleting)
 _to_delete/
+backend-server/prefs.json

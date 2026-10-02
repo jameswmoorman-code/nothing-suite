@@ -3,6 +3,7 @@ import { registry } from './callControl.js';
 import { config } from '../config.js';
 import { assessUtterance, forgetCall } from '../screening/scamDetector.js';
 import { onHoldSpeech } from '../hold/holdForMe.js';
+import { prefs } from '../prefs.js';
 
 /**
  * One Twilio Media Stream == one live screened call.
@@ -64,7 +65,7 @@ export function handleTwilioMediaSocket(ws, broadcaster) {
         const { resumed } = registry.start(callSid, from);
         if (!resumed) {
           broadcaster.send({ type: 'call_started', callSid, from });
-          broadcaster.send({ type: 'assistant', callSid, from, text: config.greetingText });
+          broadcaster.send({ type: 'assistant', callSid, from, text: prefs.greeting });
         }
         break;
       }

@@ -75,7 +75,8 @@ class ConciergeService : Service() {
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
         val pi = PendingIntent.getActivity(this, 1, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         // A full-screen intent is how incoming calls wake the screen; needs USE_FULL_SCREEN_INTENT (we have it as a dialer).
-        val n = Notification.Builder(this, NothingSuiteApp.CHANNEL_CALLS)
+        val channel = if (NothingSuiteApp.instance.settings.alertSound) NothingSuiteApp.CHANNEL_CALL_ALERT else NothingSuiteApp.CHANNEL_CALLS
+        val n = Notification.Builder(this, channel)
             .setSmallIcon(android.R.drawable.sym_action_call)
             .setContentTitle("Concierge is taking a call")
             .setContentText(frame.from ?: "Unknown caller")
@@ -85,6 +86,26 @@ class ConciergeService : Service() {
             .setContentIntent(pi)
             .build()
         getSystemService(android.app.NotificationManager::class.java).notify(CALL_NOTIFICATION_ID, n)
+        if (NothingSuiteApp.instance.settings.alertSound) {
+            runCatching {
+                val vib = getSystemService(android.os.Vibrator::class.java)
+                vib?.vibrate(android.os.VibrationEffect.createWaveform(longArrayOf(0, 250, 150, 250, 150, 400), -1))
+            }
+            // Play the chime ourselves too: the channel sound can be skipped when the full-screen
+            // pop-up takes over. Follows the ringer switch (silent/vibrate = no chime).
+            runCatching {
+                val am = getSystemService(android.media.AudioManager::class.java)
+                if (am.ringerMode == android.media.AudioManager.RINGER_MODE_NORMAL) {
+                    val uri = android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_NOTIFICATION)
+                    android.media.RingtoneManager.getRingtone(this, uri)?.apply {
+                        audioAttributes = android.media.AudioAttributes.Builder()
+                            .setUsage(android.media.AudioAttributes.USAGE_NOTIFICATION_EVENT)
+                            .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION).build()
+                        play()
+                    }
+                }
+            }
+        }
         // The full-screen intent only fires when the phone is locked. While it is unlocked and in
         // use Android shows a heads-up notification instead — unless we may "display over other
         // apps", in which case we can open the screen directly.

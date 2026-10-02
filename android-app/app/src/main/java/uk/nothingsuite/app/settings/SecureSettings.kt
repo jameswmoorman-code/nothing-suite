@@ -74,6 +74,11 @@ class SecureSettings(context: Context) {
         get() = prefs.getBoolean("desk_mode", true)
         set(v) = prefs.edit { putBoolean("desk_mode", v) }
 
+    /** Chime + buzz when a call reaches the concierge. */
+    var alertSound: Boolean
+        get() = prefs.getBoolean("alert_sound", true)
+        set(v) = prefs.edit { putBoolean("alert_sound", v) }
+
     val isConfigured: Boolean get() = backendWsUrl.startsWith("wss://") && sharedSecret.isNotBlank()
 
     /** Phones auto-capitalise and add spaces; accept https:// too and turn it into wss://. */

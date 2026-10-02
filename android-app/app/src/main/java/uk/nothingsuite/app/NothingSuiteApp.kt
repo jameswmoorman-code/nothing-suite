@@ -48,11 +48,26 @@ class NothingSuiteApp : Application() {
         nm.createNotificationChannel(
             NotificationChannel(CHANNEL_SCREENING, "Call screening", NotificationManager.IMPORTANCE_LOW)
         )
+        // Audible nudge when a call reaches the concierge: chime + buzz (respects Do Not Disturb).
+        nm.createNotificationChannel(
+            NotificationChannel(CHANNEL_CALL_ALERT, "Concierge taking a call", NotificationManager.IMPORTANCE_HIGH).apply {
+                description = "Chime and vibration when the concierge starts screening a call"
+                setSound(
+                    android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_NOTIFICATION),
+                    android.media.AudioAttributes.Builder()
+                        .setUsage(android.media.AudioAttributes.USAGE_NOTIFICATION_EVENT)
+                        .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION).build(),
+                )
+                enableVibration(true)
+                vibrationPattern = longArrayOf(0, 250, 150, 250, 150, 400)
+            }
+        )
     }
 
     companion object {
         const val CHANNEL_CALLS = "calls"
         const val CHANNEL_SCREENING = "screening"
+        const val CHANNEL_CALL_ALERT = "call_alert"
         lateinit var instance: NothingSuiteApp private set
     }
 }

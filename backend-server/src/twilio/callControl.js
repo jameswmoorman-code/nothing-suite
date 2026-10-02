@@ -1,5 +1,6 @@
 import twilio from 'twilio';
 import { config, publicWsUrl } from '../config.js';
+import { say } from '../prefs.js';
 
 const { VoiceResponse } = twilio.twiml;
 
@@ -138,7 +139,7 @@ export async function applyAction({ callSid, action, text, to }, broadcaster) {
   if (!line) throw new Error('nothing to say');
 
   const twiml = new VoiceResponse();
-  twiml.say({ voice: 'Polly.Amy' }, line);
+  say(twiml, line);
 
   if (spec.hold) {
     registry.hold(callSid, true);

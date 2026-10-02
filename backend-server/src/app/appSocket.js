@@ -1,6 +1,7 @@
 import WebSocket from 'ws';
 import { applyAction, registry } from '../twilio/callControl.js';
 import { startHold, holdNow, cancelHold, activeHold, attachHoldBroadcaster } from '../hold/holdForMe.js';
+import { prefs, previewVoice } from '../prefs.js';
 
 /**
  * Fan-out of transcript events to every connected phone (usually one).
@@ -22,6 +23,7 @@ export class AppBroadcaster {
       ws.isAlive = true;
       ws.on('pong', () => (ws.isAlive = true));
       ws.send(JSON.stringify({ type: 'hello', ts: Date.now() }));
+      ws.send(JSON.stringify({ type: 'prefs', ...prefs.snapshot(), ts: Date.now() }));
       // The phone's link drops when it sleeps; if a call is already in progress, replay it
       // so a reconnecting phone pops the live screen / Glyph instead of missing the call.
       for (const callSid of registry.active()) {
@@ -34,6 +36,9 @@ export class AppBroadcaster {
         let msg;
         try { msg = JSON.parse(raw.toString()); } catch { return; }
         try {
+          if (msg.type === 'prefs_get') { ws.send(JSON.stringify({ type: 'prefs', ...prefs.snapshot(), ts: Date.now() })); return; }
+          if (msg.type === 'prefs_preview') { await previewVoice(msg.voice); return; }
+          if (msg.type === 'prefs') { const p = prefs.update(msg); this.send({ type: 'prefs', ...p }); return; }
           if (msg.type === 'hold_start') { const id = await startHold(String(msg.to ?? '')); return; }
           if (msg.type === 'hold_now') { await holdNow(msg.session); return; }
           if (msg.type === 'hold_cancel') { await cancelHold(msg.session); return; }

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import twilio from 'twilio';
 import { config, publicWsUrl } from '../config.js';
 import { registry } from './callControl.js';
+import { prefs, say } from '../prefs.js';
 import { holdRoutes } from '../hold/holdForMe.js';
 
 const { VoiceResponse } = twilio.twiml;
@@ -44,11 +45,11 @@ voiceRouter.post('/voice', twilioSignatureGuard, (req, res) => {
   const { resumed } = registry.start(CallSid, From);
   if (!resumed && broadcaster) {
     broadcaster.send({ type: 'call_started', callSid: CallSid, from: From });
-    broadcaster.send({ type: 'assistant', callSid: CallSid, from: From, text: config.greetingText });
+    broadcaster.send({ type: 'assistant', callSid: CallSid, from: From, text: prefs.greeting });
   }
 
   const twiml = new VoiceResponse();
-  twiml.say({ voice: 'Polly.Amy' }, config.greetingText);
+  say(twiml, prefs.greeting);
 
   const connect = twiml.connect();
   const stream = connect.stream({ url: `${publicWsUrl}/twilio-media` });

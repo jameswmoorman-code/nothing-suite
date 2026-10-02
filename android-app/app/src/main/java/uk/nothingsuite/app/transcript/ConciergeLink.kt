@@ -44,7 +44,14 @@ data class TranscriptFrame(
     val to: String? = null,
     val heard: Boolean = false,
     val recorded: Boolean = false,
+    // "prefs" frames: the concierge's voice and greeting, and the voices on offer
+    val voice: String? = null,
+    val greeting: String? = null,
+    val voices: List<VoiceOption> = emptyList(),
 )
+
+@kotlinx.serialization.Serializable
+data class VoiceOption(val id: String, val label: String, val desc: String = "")
 
 /**
  * The one connection between this phone and the concierge server.
