@@ -32,6 +32,8 @@ data class TranscriptUiState(
     val connecting: Boolean = false,
     val risk: Risk = Risk.NONE,
     val riskReasons: List<String> = emptyList(),
+    /** Caller is parked on hold music. */
+    val held: Boolean = false,
 )
 
 /**
@@ -79,14 +81,17 @@ class TranscriptViewModel(
             "call_started" -> if (_state.value.status == ScreeningStatus.Ended || _state.value.callSid == null || frame.callSid == _state.value.callSid) {
                 _state.update { it.copy(status = ScreeningStatus.Live, caller = frame.from ?: it.caller, callSid = frame.callSid, lines = if (frame.callSid != it.callSid) emptyList() else it.lines, message = null, connecting = false, risk = if (frame.callSid != it.callSid) Risk.NONE else it.risk, riskReasons = if (frame.callSid != it.callSid) emptyList() else it.riskReasons) }
             }
+            "hold_state" -> if (matches(frame)) _state.update { it.copy(held = frame.held) }
             "alert" -> if (matches(frame)) _state.update { it.copy(risk = maxOf(it.risk, Risk.parse(frame.level)), riskReasons = frame.reasons) }
             "assistant" -> if (matches(frame)) addLine(TranscriptLine(frame.text.orEmpty(), final = true, speaker = Speaker.CONCIERGE))
             "delta" -> if (matches(frame)) appendDelta(frame.text.orEmpty())
             "final" -> if (matches(frame)) finaliseLine(frame.text.orEmpty())
             "call_ended" -> if (matches(frame)) {
                 _state.update { it.copy(status = ScreeningStatus.Ended, message = frame.text, connecting = false) }
-                // You watched it live, so it isn't "new" in the inbox.
-                frame.callSid?.let { sid -> viewModelScope.launch { kotlinx.coroutines.delay(500); uk.nothingsuite.app.inbox.CallInbox.markRead(sid) } }
+                // You watched it live, so it isn't "new" in the inbox — unless the phone was face down,
+                // in which case the screen popped up but nobody saw it.
+                if (!uk.nothingsuite.app.desk.DeskMode.faceDown.value)
+                    frame.callSid?.let { sid -> viewModelScope.launch { kotlinx.coroutines.delay(500); uk.nothingsuite.app.inbox.CallInbox.markRead(sid) } }
             }
             "error" -> if (frame.callSid == null || matches(frame)) _state.update { it.copy(message = frame.text, connecting = false) }
         }
@@ -98,6 +103,8 @@ class TranscriptViewModel(
     fun callBack() = act("callback")
     fun takeMessage() = act("message")
     fun hangUp() = act("hangup")
+    fun hold() = act("hold")
+    fun resume() = act("resume")
     fun takeTheCall() {
         val mine = settings.myNumber
         if (mine.isBlank()) { _state.update { it.copy(message = "Add MY NUMBER in Setup so the concierge can ring you.") }; return }

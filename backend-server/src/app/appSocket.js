@@ -1,5 +1,6 @@
 import WebSocket from 'ws';
-import { applyAction } from '../twilio/callControl.js';
+import { applyAction, registry } from '../twilio/callControl.js';
+import { startHold, holdNow, cancelHold, activeHold, attachHoldBroadcaster } from '../hold/holdForMe.js';
 
 /**
  * Fan-out of transcript events to every connected phone (usually one).
@@ -15,16 +16,28 @@ export class AppBroadcaster {
 
   constructor(wss) {
     this.#wss = wss;
+    attachHoldBroadcaster(this);
     wss.on('connection', (ws, req) => {
       console.log(`[app] phone connected from ${req.socket.remoteAddress}`);
       ws.isAlive = true;
       ws.on('pong', () => (ws.isAlive = true));
       ws.send(JSON.stringify({ type: 'hello', ts: Date.now() }));
+      // The phone's link drops when it sleeps; if a call is already in progress, replay it
+      // so a reconnecting phone pops the live screen / Glyph instead of missing the call.
+      for (const callSid of registry.active()) {
+        const from = registry.from(callSid) ?? 'unknown';
+        ws.send(JSON.stringify({ type: 'call_started', callSid, from, ts: Date.now(), resumed: true }));
+      }
+      const hold = activeHold();
+      if (hold) ws.send(JSON.stringify({ type: 'hold', ...hold, ts: Date.now() }));
       ws.on('message', async (raw) => {
         let msg;
         try { msg = JSON.parse(raw.toString()); } catch { return; }
-        if (msg.type !== 'action') return;
         try {
+          if (msg.type === 'hold_start') { const id = await startHold(String(msg.to ?? '')); return; }
+          if (msg.type === 'hold_now') { await holdNow(msg.session); return; }
+          if (msg.type === 'hold_cancel') { await cancelHold(msg.session); return; }
+          if (msg.type !== 'action') return;
           await applyAction(msg, this);
         } catch (e) {
           console.warn(`[action] failed: ${e.message}`);

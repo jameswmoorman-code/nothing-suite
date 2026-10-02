@@ -6,6 +6,10 @@ import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -41,6 +45,8 @@ class MainActivity : ComponentActivity() {
     private var configured by mutableStateOf(false)
     private var canPopUp by mutableStateOf(true)
     private var canPopUpLocked by mutableStateOf(true)
+    private var unrestricted by mutableStateOf(true)
+    private var toySelected by mutableStateOf(true)
     private val roleLauncher = roleManager.register(this) { isDefault = it }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -54,7 +60,7 @@ class MainActivity : ComponentActivity() {
                 val inboxCount = inbox.size
                 val unread = inbox.count { !it.read && !it.live }
 
-                Column(Modifier.fillMaxSize().padding(20.dp)) {
+                Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).statusBarsPadding().navigationBarsPadding().padding(20.dp)) {
                     DotMatrixText("NOTHING SUITE", size = 28)
                     Text(
                         if (tier.isPremium) "PREMIUM" else "FREE",
@@ -67,7 +73,7 @@ class MainActivity : ComponentActivity() {
                         Column(Modifier.padding(16.dp)) {
                             DotMatrixText("1 · DEFAULT PHONE APP", size = 14)
                             Spacer(Modifier.height(8.dp))
-                            Text(if (isDefault) "Done" else "Required to intercept calls", style = typography.body)
+                            Text(if (isDefault) "Done" else "Required to intercept calls", style = typography.body, color = colors.onBackground)
                             Spacer(Modifier.height(12.dp))
                             NothingButton(
                                 text = if (isDefault) "SET" else "SET AS DEFAULT",
@@ -83,7 +89,7 @@ class MainActivity : ComponentActivity() {
                         Column(Modifier.padding(16.dp)) {
                             DotMatrixText("2 · YOUR KEYS", size = 14)
                             Spacer(Modifier.height(8.dp))
-                            Text(if (configured) "Backend connected" else "Point the app at your server", style = typography.body)
+                            Text(if (configured) "Backend connected" else "Point the app at your server", style = typography.body, color = colors.onBackground)
                             Spacer(Modifier.height(12.dp))
                             NothingButton("OPEN SETUP", NothingButtonStyle.Solid, Modifier.fillMaxWidth()) {
                                 startActivity(Intent(this@MainActivity, SettingsActivity::class.java))
@@ -91,6 +97,34 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                     Spacer(Modifier.height(12.dp))
+
+                    if (!unrestricted) {
+                        NothingCard(Modifier.fillMaxWidth()) {
+                            Column(Modifier.padding(16.dp)) {
+                                DotMatrixText("KEEP AWAKE", size = 14)
+                                Spacer(Modifier.height(8.dp))
+                                Text("When the phone sleeps, Android cuts the concierge's link to your server and calls get missed. Allow the app to run unrestricted in the background.", style = typography.body, color = colors.onBackground)
+                                Spacer(Modifier.height(12.dp))
+                                NothingButton("ALLOW", NothingButtonStyle.Accent, Modifier.fillMaxWidth()) {
+                                    runCatching {
+                                        startActivity(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, android.net.Uri.parse("package:$packageName")))
+                                    }.onFailure { runCatching { startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)) } }
+                                }
+                            }
+                        }
+                        Spacer(Modifier.height(12.dp))
+                    }
+
+                    if (!toySelected) {
+                        NothingCard(Modifier.fillMaxWidth()) {
+                            Column(Modifier.padding(16.dp)) {
+                                DotMatrixText("GLYPH FACE", size = 14)
+                                Spacer(Modifier.height(8.dp))
+                                Text("Concierge isn't the selected Glyph face, so caller ID won't show on the back. Press the Glyph button on the back of the phone until the Concierge clock appears (add it first via Setup if it's not in the list).", style = typography.body, color = colors.onBackground)
+                            }
+                        }
+                        Spacer(Modifier.height(12.dp))
+                    }
 
                     if (!canPopUp || !canPopUpLocked) {
                         NothingCard(Modifier.fillMaxWidth()) {
@@ -116,7 +150,7 @@ class MainActivity : ComponentActivity() {
                         Column(Modifier.padding(16.dp)) {
                             DotMatrixText("3 · LIVE VIEW", size = 14)
                             Spacer(Modifier.height(8.dp))
-                            Text(if (configured) "On duty. When a call reaches the concierge this screen pops up by itself; open it any time to watch." else "Finish Setup first.", style = typography.body)
+                            Text(if (configured) "On duty. When a call reaches the concierge this screen pops up by itself; open it any time to watch." else "Finish Setup first.", style = typography.body, color = colors.onBackground)
                             Spacer(Modifier.height(12.dp))
                             NothingButton("OPEN LIVE VIEW", NothingButtonStyle.Outline, Modifier.fillMaxWidth(), enabled = configured) {
                                 startActivity(Intent(this@MainActivity, uk.nothingsuite.app.transcript.LiveTranscriptActivity::class.java))
@@ -145,13 +179,26 @@ class MainActivity : ComponentActivity() {
                     }
                     Spacer(Modifier.height(12.dp))
 
+                    NothingCard(Modifier.fillMaxWidth()) {
+                        Column(Modifier.padding(16.dp)) {
+                            DotMatrixText("5 · HOLD FOR ME", size = 14)
+                            Spacer(Modifier.height(8.dp))
+                            Text(if (configured) "Stuck in a phone queue? Hand the wait to the concierge and get rung back when a person answers." else "Finish Setup first.", style = typography.body, color = colors.onBackground)
+                            Spacer(Modifier.height(12.dp))
+                            NothingButton("OPEN HOLD FOR ME", NothingButtonStyle.Outline, Modifier.fillMaxWidth(), enabled = configured) {
+                                startActivity(Intent(this@MainActivity, uk.nothingsuite.app.hold.HoldForMeActivity::class.java))
+                            }
+                        }
+                    }
+                    Spacer(Modifier.height(12.dp))
+
                     // Premium unlock — Google Play handles the payment sheet.
                     if (!tier.isPremium) {
                         NothingCard(Modifier.fillMaxWidth()) {
                             Column(Modifier.padding(16.dp)) {
                                 DotMatrixText("GLYPH VISUALISERS", size = 14)
                                 Spacer(Modifier.height(8.dp))
-                                Text("Sweep and milestone animations on the Glyph strip. One-time purchase.", style = typography.body)
+                                Text("Sweep and milestone animations on the Glyph strip. One-time purchase.", style = typography.body, color = colors.onBackground)
                                 Spacer(Modifier.height(12.dp))
                                 NothingButton("UNLOCK PLUS · ${app.license.catalogue.plus?.price}", NothingButtonStyle.Accent, Modifier.fillMaxWidth()) {
                                     app.license.play.buy(this@MainActivity, Sku.PLUS)
@@ -178,6 +225,8 @@ class MainActivity : ComponentActivity() {
         configured = NothingSuiteApp.instance.settings.isConfigured
         canPopUp = uk.nothingsuite.app.transcript.ConciergeService.canPopUp(this)
         canPopUpLocked = uk.nothingsuite.app.transcript.ConciergeService.canPopUpWhenLocked(this)
+        unrestricted = getSystemService(android.os.PowerManager::class.java).isIgnoringBatteryOptimizations(packageName)
+        toySelected = !uk.nothingsuite.app.glyph.GlyphCallerId.isMatrixPhone || !NothingSuiteApp.instance.settings.glyphCallerId || uk.nothingsuite.app.glyph.GlyphCallerId.toySelected
         if (configured) uk.nothingsuite.app.transcript.ConciergeService.ensureRunning(this)
     }
 }

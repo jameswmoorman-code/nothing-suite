@@ -115,15 +115,25 @@ private fun InboxList(calls: List<ScreenedCall>, onOpen: (ScreenedCall) -> Unit,
                         }
                         Spacer(Modifier.height(6.dp))
                         Text(call.gist, style = typography.body, color = colors.onBackground)
-                        call.outcome?.let { Spacer(Modifier.height(6.dp)); Text(it.uppercase(), style = typography.caption, color = colors.onBackgroundMuted) }
+                        Spacer(Modifier.height(6.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(call.outcome?.uppercase() ?: "", style = typography.caption, color = colors.onBackgroundMuted, modifier = Modifier.weight(1f))
+                            if (!call.live) Text("DELETE", style = typography.caption, color = colors.accent, modifier = Modifier.clickable { CallInbox.delete(call.callSid) }.padding(start = 12.dp, top = 4.dp, bottom = 4.dp))
+                        }
                     }
                 }
             }
         }
 
         Spacer(Modifier.height(12.dp))
+        var confirmClear by remember { mutableStateOf(false) }
+        LaunchedEffect(confirmClear) { if (confirmClear) { kotlinx.coroutines.delay(4000); confirmClear = false } }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             if (calls.any { !it.read }) NothingButton("MARK ALL READ", NothingButtonStyle.Outline, Modifier.weight(1f)) { CallInbox.markAllRead() }
+            if (calls.isNotEmpty()) NothingButton(
+                if (confirmClear) "TAP AGAIN TO CLEAR" else "CLEAR ALL",
+                if (confirmClear) NothingButtonStyle.Accent else NothingButtonStyle.Outline, Modifier.weight(1f),
+            ) { if (confirmClear) { CallInbox.clear(); confirmClear = false } else confirmClear = true }
             NothingButton("CLOSE", NothingButtonStyle.Outline, Modifier.weight(1f), onClick = onClose)
         }
     }

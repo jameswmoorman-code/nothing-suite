@@ -46,6 +46,7 @@ class ConciergeService : Service() {
         else startForeground(NOTIFICATION_ID, n)
 
         ConciergeLink.start(app.settings)
+        uk.nothingsuite.app.hold.HoldForMe.init()
         uk.nothingsuite.app.desk.DeskMode.start(this)
         if (watcher == null) watcher = scope.launch {
             ConciergeLink.frames.collect { frame ->
@@ -55,6 +56,10 @@ class ConciergeService : Service() {
                     uk.nothingsuite.app.glyph.GlyphCallerId.onFrame(this@ConciergeService, frame)
                 }.onFailure { android.util.Log.e("Concierge", "glyph caller id failed", it) }
                 when (frame.type) {
+                    "hold" -> when (frame.state) {
+                        "human" -> popHoldScreen(frame)
+                        "joined", "ended" -> getSystemService(android.app.NotificationManager::class.java).cancel(HOLD_NOTIFICATION_ID)
+                    }
                     "call_started" -> popLiveScreen(frame)
                     "call_ended" -> { CallBanner.hide(this@ConciergeService); notifyInbox(frame) }
                 }
@@ -91,6 +96,24 @@ class ConciergeService : Service() {
         }
     }
 
+    /** Hold For Me: a person answered — shout about it (your phone is about to ring). */
+    private fun popHoldScreen(frame: TranscriptFrame) {
+        val intent = Intent(this, uk.nothingsuite.app.hold.HoldForMeActivity::class.java)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        val pi = PendingIntent.getActivity(this, 3, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        val n = Notification.Builder(this, NothingSuiteApp.CHANNEL_CALLS)
+            .setSmallIcon(android.R.drawable.sym_action_call)
+            .setContentTitle("Someone answered at ${frame.to ?: "the company"}")
+            .setContentText("The concierge has asked them to hold — pick up when your phone rings.")
+            .setCategory(Notification.CATEGORY_CALL)
+            .setAutoCancel(true)
+            .setFullScreenIntent(pi, true)
+            .setContentIntent(pi)
+            .build()
+        getSystemService(android.app.NotificationManager::class.java).notify(HOLD_NOTIFICATION_ID, n)
+        if (canPopUp(this)) runCatching { startActivity(intent) }
+    }
+
     /** The call is over: replace the ringing-style notification with a quiet "in your inbox" one. */
     private fun notifyInbox(frame: TranscriptFrame) {
         val nm = getSystemService(android.app.NotificationManager::class.java)
@@ -117,6 +140,7 @@ class ConciergeService : Service() {
     companion object {
         private const val NOTIFICATION_ID = 0xC0CE
         const val CALL_NOTIFICATION_ID = 0xC0CF
+        const val HOLD_NOTIFICATION_ID = 0xC0D0
         private const val INBOX_NOTIFICATION_BASE = 0x1B000
 
         /** May we open the live screen from the background while the phone is in use? */

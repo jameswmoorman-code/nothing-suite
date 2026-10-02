@@ -18,7 +18,12 @@ export const ACTIONS = Object.freeze({
   hangup:     { say: "Goodbye.", hangup: true },
   connect:    { say: 'Connecting you now.', dial: true },
   say:        { resume: true },                       // free text from the app
+  hold:       { say: 'Please hold for a moment.', hold: true },      // music to the caller until resumed
+  resume:     { say: 'Thanks for holding.', resume: true },
 });
+
+/** Twilio's royalty-free hold music (looped). Swap for your own MP3 URL if you like. */
+export const HOLD_MUSIC_URL = 'http://com.twilio.music.classical.s3.amazonaws.com/BusyStrings.mp3';
 
 /** Live calls by CallSid, so stop/start churn from updates doesn't look like a hang-up. */
 class CallRegistry {
@@ -32,7 +37,7 @@ class CallRegistry {
       clearTimeout(existing.reconnectTimer); existing.reconnectTimer = null;
       return { resumed: true, from: existing.from };
     }
-    this.#calls.set(callSid, { from, reconnecting: false, endReason: null, reconnectTimer: null, said: false });
+    this.#calls.set(callSid, { from, reconnecting: false, endReason: null, reconnectTimer: null, said: false, held: false });
     return { resumed: false, from };
   }
   /** The caller has said something we transcribed. */
@@ -43,10 +48,19 @@ class CallRegistry {
     if (/hung up|socket closed/i.test(fallback) && !c.said) return 'hung up without leaving a message';
     return fallback;
   }
+  /** Caller parked on hold music: no stream for a while, and that's fine. */
+  hold(callSid, held) {
+    const c = this.#calls.get(callSid);
+    if (!c) return;
+    c.held = held;
+    if (held) { c.reconnecting = true; clearTimeout(c.reconnectTimer); c.reconnectTimer = null; }
+  }
+  isHeld(callSid) { return this.#calls.get(callSid)?.held ?? false; }
   expectReconnect(callSid) {
     const c = this.#calls.get(callSid);
     if (!c) return;
     c.reconnecting = true;
+    if (c.held) return;                         // the watchdog still catches a hang-up
     // If the caller hangs up while the concierge is mid-sentence, Twilio never opens
     // the next stream and no one would report the end. Give it 25 s, then call it.
     clearTimeout(c.reconnectTimer);
@@ -126,15 +140,20 @@ export async function applyAction({ callSid, action, text, to }, broadcaster) {
   const twiml = new VoiceResponse();
   twiml.say({ voice: 'Polly.Amy' }, line);
 
-  if (spec.dial) {
+  if (spec.hold) {
+    registry.hold(callSid, true);
+    twiml.play({ loop: 0 }, HOLD_MUSIC_URL);
+  } else if (spec.dial) {
     const target = (to ?? config.userNumber ?? '').trim();
     if (!target) throw new Error('No number to connect to: set MY NUMBER in the app or USER_NUMBER in .env');
+    registry.hold(callSid, false);
     registry.willEnd(callSid, 'connected to you');
     twiml.dial({ callerId: config.twilioNumber || undefined, answerOnBridge: true }, target);
   } else if (spec.hangup) {
     registry.willEnd(callSid, action === 'callback' ? 'ended: you will call back' : 'ended by you');
     twiml.hangup();
   } else {
+    registry.hold(callSid, false);
     registry.expectReconnect(callSid);
     streamTwiml(twiml, from, callSid);
   }
@@ -151,5 +170,6 @@ export async function applyAction({ callSid, action, text, to }, broadcaster) {
     throw e;
   }
   broadcaster.send({ type: 'assistant', callSid, from, text: line });
+  if (spec.hold || action === 'resume') broadcaster.send({ type: 'hold_state', callSid, from, held: !!spec.hold });
   return line;
 }

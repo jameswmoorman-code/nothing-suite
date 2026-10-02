@@ -2,6 +2,7 @@ import { createTranscriber } from '../transcribers/index.js';
 import { registry } from './callControl.js';
 import { config } from '../config.js';
 import { assessUtterance, forgetCall } from '../screening/scamDetector.js';
+import { onHoldSpeech } from '../hold/holdForMe.js';
 
 /**
  * One Twilio Media Stream == one live screened call.
@@ -16,6 +17,7 @@ export function handleTwilioMediaSocket(ws, broadcaster) {
   let from = 'unknown';
   let transcriber = null;
   let mediaFrames = 0;
+  let holdSession = null;     // set when this stream is Hold For Me listening to the company
 
   ws.on('message', async (raw) => {
     let msg;
@@ -33,7 +35,19 @@ export function handleTwilioMediaSocket(ws, broadcaster) {
         streamSid = msg.start.streamSid;
         callSid = msg.start.callSid;
         from = msg.start.customParameters?.from ?? 'unknown';
-        console.log(`[media] start stream=${streamSid} call=${callSid} from=${from}`);
+        holdSession = msg.start.customParameters?.mode === 'hold' ? msg.start.customParameters?.session : null;
+        console.log(`[media] start stream=${streamSid} call=${callSid} ${holdSession ? `hold=${holdSession}` : `from=${from}`}`);
+
+        if (holdSession) {
+          // Hold For Me: we're the listener on the company leg. No screening, no app transcript.
+          transcriber = createTranscriber({
+            onDelta: () => {},
+            onFinal: (text) => onHoldSpeech(holdSession, text).catch((e) => console.warn(`[hold] ${e.message}`)),
+            onError: (err) => console.warn(`[transcriber] ${err}`),
+          });
+          await transcriber.connect();
+          break;
+        }
 
         transcriber = createTranscriber({
           onDelta: (text) => broadcaster.send({ type: 'delta', callSid, from, text }),
@@ -80,6 +94,7 @@ export function handleTwilioMediaSocket(ws, broadcaster) {
     if (done) return;
     done = true;
     try { transcriber?.close(); } catch (e) { console.warn(`[transcriber] close failed: ${e.message}`); }
+    if (holdSession) return;                        // hold sessions end via their own status callbacks
     const finalReason = registry.stop(callSid, reason);
     if (finalReason === null) return;               // the concierge is mid-sentence; stream reconnects shortly
     forgetCall(callSid);

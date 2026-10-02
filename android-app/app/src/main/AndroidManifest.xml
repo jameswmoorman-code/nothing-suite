@@ -25,6 +25,8 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!-- Keep the concierge link alive while the phone sleeps (standard for call apps). -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
     <!-- ===================== Glyph Developer Kit ============================ -->
     <uses-permission android:name="com.nothing.ketchum.permission.ENABLE" />
@@ -70,6 +72,11 @@
             android:name=".inbox.InboxActivity"
             android:exported="false" />
 
+        <activity
+            android:name=".hold.HoldForMeActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
         <!-- Glyph Toy: pick "Concierge" with the Glyph button and the matrix shows caller ID
              + live transcript during screened calls, locked or not. -->
         <service android:name=".glyph.ConciergeToy" android:exported="true">
@@ -78,6 +85,8 @@
             <meta-data android:name="com.nothing.glyph.toy.image" android:resource="@drawable/toy_concierge" />
             <meta-data android:name="com.nothing.glyph.toy.summary" android:resource="@string/toy_concierge_summary" />
             <meta-data android:name="com.nothing.glyph.toy.longpress" android:value="1" />
+            <!-- keep drawing with the screen off (always-on); the phone sends EVENT_AOD each minute -->
+            <meta-data android:name="com.nothing.glyph.toy.aod_support" android:value="1" />
         </service>
 
         <!--

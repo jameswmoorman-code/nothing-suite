@@ -2,6 +2,7 @@ import { Router } from 'express';
 import twilio from 'twilio';
 import { config, publicWsUrl } from '../config.js';
 import { registry } from './callControl.js';
+import { holdRoutes } from '../hold/holdForMe.js';
 
 const { VoiceResponse } = twilio.twiml;
 
@@ -16,7 +17,7 @@ export function attachBroadcaster(b) { broadcaster = b; }
  * against your OpenAI key. Twilio signs the *public* URL, so we tell the
  * validator what URL Twilio thinks it called (behind ngrok/Cloudflare).
  */
-function twilioSignatureGuard(req, res, next) {
+export function twilioSignatureGuard(req, res, next) {
   if (!config.twilio.validateSignature) return next();
   const signature = req.header('X-Twilio-Signature') ?? '';
   const fullUrl = `${config.publicUrl}${req.originalUrl}`;
@@ -69,3 +70,5 @@ voiceRouter.post('/voice/status', twilioSignatureGuard, (req, res) => {
   }
   res.sendStatus(204);
 });
+
+holdRoutes(voiceRouter, twilioSignatureGuard);

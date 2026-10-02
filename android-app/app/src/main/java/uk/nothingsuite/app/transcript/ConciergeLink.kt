@@ -37,6 +37,13 @@ data class TranscriptFrame(
     val level: String? = null,              // none | caution | scam
     val score: Int = 0,
     val reasons: List<String> = emptyList(),
+    // "hold_state" (caller parked on music) and "hold" (Hold For Me) frames
+    val held: Boolean = false,
+    val session: String? = null,
+    val state: String? = null,              // dialing_you | connecting | talking | holding | human | joined | ended
+    val to: String? = null,
+    val heard: Boolean = false,
+    val recorded: Boolean = false,
 )
 
 /**
@@ -51,7 +58,7 @@ object ConciergeLink {
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = false }
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val client = OkHttpClient.Builder()
-        .pingInterval(20, TimeUnit.SECONDS)
+        .pingInterval(10, TimeUnit.SECONDS)
         .readTimeout(0, TimeUnit.MILLISECONDS)
         .build()
 
@@ -91,6 +98,10 @@ object ConciergeLink {
     /** Restart after the backend URL or secret changed. */
     fun restart(settings: SecureSettings) { stop(); start(settings) }
 
+    /** Send any JSON object to the server (Hold For Me etc.). */
+    fun sendRaw(build: kotlinx.serialization.json.JsonObjectBuilder.() -> Unit): Boolean =
+        socket?.send(json.encodeToString(buildJsonObject(build))) ?: false
+
     /** Tell the concierge what to do on the live call. */
     fun send(action: String, text: String? = null, to: String? = null, callSid: String? = activeCallSid): Boolean {
         val sid = callSid ?: return false
@@ -116,7 +127,7 @@ object ConciergeLink {
                             activeCallSid = frame.callSid; activeCaller = frame.from
                             synchronized(historyLock) { _history.clear(); _history += frame }
                         }
-                        "assistant", "delta", "final", "alert" -> synchronized(historyLock) { if (_history.size < 2000) _history += frame }
+                        "assistant", "delta", "final", "alert", "hold_state" -> synchronized(historyLock) { if (_history.size < 2000) _history += frame }
                         "call_ended" -> if (frame.callSid == activeCallSid) {
                             activeCallSid = null; activeCaller = null
                             synchronized(historyLock) { _history += frame }

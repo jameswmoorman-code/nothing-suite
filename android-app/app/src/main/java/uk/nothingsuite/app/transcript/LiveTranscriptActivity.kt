@@ -60,6 +60,8 @@ class LiveTranscriptActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setShowWhenLocked(true)
         setTurnScreenOn(true)
+        // Keep the display (and so the Glyph toy) awake while this screen is up.
+        window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         getSystemService(android.app.NotificationManager::class.java).cancel(ConciergeService.CALL_NOTIFICATION_ID)
         CallBanner.hide(this)
         setContent {
@@ -88,7 +90,8 @@ private fun TranscriptScreen(state: TranscriptUiState, vm: TranscriptViewModel, 
     val live = state.status == ScreeningStatus.Live
     // The call's over: give a moment to read the last line, then get out of the way.
     LaunchedEffect(state.status) {
-        if (state.status == ScreeningStatus.Ended) { kotlinx.coroutines.delay(4000); onClose() }
+        // Long enough to read the last line — and for the Glyph to show END, then the call count.
+        if (state.status == ScreeningStatus.Ended) { kotlinx.coroutines.delay(10_000); onClose() }
     }
 
     Column(Modifier.fillMaxSize().padding(20.dp)) {
@@ -96,7 +99,7 @@ private fun TranscriptScreen(state: TranscriptUiState, vm: TranscriptViewModel, 
             text = when (state.status) {
                 ScreeningStatus.Connecting -> "CONNECTING TO CONCIERGE"
                 ScreeningStatus.Waiting -> "ON DUTY · WAITING FOR A CALL"
-                ScreeningStatus.Live -> if (state.connecting) "RINGING YOU…" else "LIVE"
+                ScreeningStatus.Live -> if (state.connecting) "RINGING YOU…" else if (state.held) "ON HOLD · MUSIC PLAYING" else "LIVE"
                 ScreeningStatus.Ended -> "CALL ENDED"
                 ScreeningStatus.Error -> "ERROR"
             },
@@ -139,13 +142,15 @@ private fun TranscriptScreen(state: TranscriptUiState, vm: TranscriptViewModel, 
             Spacer(Modifier.height(8.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 NothingButton("ASK WHY", NothingButtonStyle.Outline, Modifier.weight(1f)) { vm.askReason() }
-                NothingButton("CALL BACK", NothingButtonStyle.Outline, Modifier.weight(1f)) { vm.callBack() }
+                NothingButton("TAKE MESSAGE", NothingButtonStyle.Outline, Modifier.weight(1f)) { vm.takeMessage() }
             }
             Spacer(Modifier.height(8.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                NothingButton("TAKE MESSAGE", NothingButtonStyle.Outline, Modifier.weight(1f)) { vm.takeMessage() }
-                NothingButton("HANG UP", if (state.risk == Risk.SCAM) NothingButtonStyle.Accent else NothingButtonStyle.Solid, Modifier.weight(1f)) { vm.hangUp() }
+                NothingButton(if (state.held) "RESUME" else "HOLD", if (state.held) NothingButtonStyle.Solid else NothingButtonStyle.Outline, Modifier.weight(1f)) { if (state.held) vm.resume() else vm.hold() }
+                NothingButton("CALL BACK", NothingButtonStyle.Outline, Modifier.weight(1f)) { vm.callBack() }
             }
+            Spacer(Modifier.height(8.dp))
+            NothingButton("HANG UP", if (state.risk == Risk.SCAM) NothingButtonStyle.Accent else NothingButtonStyle.Solid, Modifier.fillMaxWidth()) { vm.hangUp() }
         } else {
             if (state.status == ScreeningStatus.Ended) {
                 NothingButton("OPEN IN INBOX", NothingButtonStyle.Outline, Modifier.fillMaxWidth()) { onOpenInbox(state.callSid) }
