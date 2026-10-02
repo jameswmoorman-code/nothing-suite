@@ -33,6 +33,10 @@ data class TranscriptFrame(
     val from: String? = null,
     val text: String? = null,
     val ts: Long = 0,
+    // scam-shield "alert" frames
+    val level: String? = null,              // none | caution | scam
+    val score: Int = 0,
+    val reasons: List<String> = emptyList(),
 )
 
 /**
@@ -112,7 +116,7 @@ object ConciergeLink {
                             activeCallSid = frame.callSid; activeCaller = frame.from
                             synchronized(historyLock) { _history.clear(); _history += frame }
                         }
-                        "assistant", "delta", "final" -> synchronized(historyLock) { if (_history.size < 2000) _history += frame }
+                        "assistant", "delta", "final", "alert" -> synchronized(historyLock) { if (_history.size < 2000) _history += frame }
                         "call_ended" -> if (frame.callSid == activeCallSid) {
                             activeCallSid = null; activeCaller = null
                             synchronized(historyLock) { _history += frame }

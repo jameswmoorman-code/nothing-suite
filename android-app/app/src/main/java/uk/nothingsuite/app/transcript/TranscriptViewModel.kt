@@ -10,8 +10,16 @@ import kotlinx.coroutines.launch
 import uk.nothingsuite.app.settings.SecureSettings
 
 enum class ScreeningStatus { Connecting, Waiting, Live, Ended, Error }
+@kotlinx.serialization.Serializable
 enum class Speaker { CALLER, CONCIERGE }
 
+/** Scam-shield verdict so far. Only ever goes up during a call. */
+@kotlinx.serialization.Serializable
+enum class Risk { NONE, CAUTION, SCAM;
+    companion object { fun parse(s: String?) = when (s) { "scam" -> SCAM; "caution" -> CAUTION; else -> NONE } }
+}
+
+@kotlinx.serialization.Serializable
 data class TranscriptLine(val text: String, val final: Boolean, val speaker: Speaker = Speaker.CALLER)
 
 data class TranscriptUiState(
@@ -22,6 +30,8 @@ data class TranscriptUiState(
     val message: String? = null,
     /** Set after TAKE THE CALL — the concierge is ringing you. */
     val connecting: Boolean = false,
+    val risk: Risk = Risk.NONE,
+    val riskReasons: List<String> = emptyList(),
 )
 
 /**
@@ -67,12 +77,17 @@ class TranscriptViewModel(
             "hello" -> _state.update { if (it.status == ScreeningStatus.Connecting) it.copy(status = ScreeningStatus.Waiting) else it }
             "link_error" -> _state.update { if (it.status != ScreeningStatus.Ended) it.copy(message = "Reconnecting… (${frame.text})") else it }
             "call_started" -> if (_state.value.status == ScreeningStatus.Ended || _state.value.callSid == null || frame.callSid == _state.value.callSid) {
-                _state.update { it.copy(status = ScreeningStatus.Live, caller = frame.from ?: it.caller, callSid = frame.callSid, lines = if (frame.callSid != it.callSid) emptyList() else it.lines, message = null, connecting = false) }
+                _state.update { it.copy(status = ScreeningStatus.Live, caller = frame.from ?: it.caller, callSid = frame.callSid, lines = if (frame.callSid != it.callSid) emptyList() else it.lines, message = null, connecting = false, risk = if (frame.callSid != it.callSid) Risk.NONE else it.risk, riskReasons = if (frame.callSid != it.callSid) emptyList() else it.riskReasons) }
             }
+            "alert" -> if (matches(frame)) _state.update { it.copy(risk = maxOf(it.risk, Risk.parse(frame.level)), riskReasons = frame.reasons) }
             "assistant" -> if (matches(frame)) addLine(TranscriptLine(frame.text.orEmpty(), final = true, speaker = Speaker.CONCIERGE))
             "delta" -> if (matches(frame)) appendDelta(frame.text.orEmpty())
             "final" -> if (matches(frame)) finaliseLine(frame.text.orEmpty())
-            "call_ended" -> if (matches(frame)) _state.update { it.copy(status = ScreeningStatus.Ended, message = frame.text, connecting = false) }
+            "call_ended" -> if (matches(frame)) {
+                _state.update { it.copy(status = ScreeningStatus.Ended, message = frame.text, connecting = false) }
+                // You watched it live, so it isn't "new" in the inbox.
+                frame.callSid?.let { sid -> viewModelScope.launch { kotlinx.coroutines.delay(500); uk.nothingsuite.app.inbox.CallInbox.markRead(sid) } }
+            }
             "error" -> if (frame.callSid == null || matches(frame)) _state.update { it.copy(message = frame.text, connecting = false) }
         }
     }
@@ -96,30 +111,12 @@ class TranscriptViewModel(
         if (!ok) _state.update { it.copy(message = "Not connected to the concierge — try again in a moment.") }
     }
 
-    // ---- transcript building -------------------------------------------------
+    // ---- transcript building (shared with the inbox) ---------------------------
 
-    private fun addLine(line: TranscriptLine) = _state.update { s ->
-        val lines = s.lines.toMutableList()
-        // Close any half-finished caller line first so the order reads correctly.
-        val last = lines.lastOrNull()
-        if (last != null && !last.final) lines[lines.lastIndex] = last.copy(final = true)
-        lines += line
-        s.copy(status = ScreeningStatus.Live, lines = lines)
-    }
+    /** A line arriving after the call ended (whisper flushing the last chunk) must not revive it. */
+    private fun TranscriptUiState.stillLive() = if (status == ScreeningStatus.Ended) ScreeningStatus.Ended else ScreeningStatus.Live
 
-    private fun appendDelta(delta: String) = _state.update { s ->
-        val lines = s.lines.toMutableList()
-        val last = lines.lastOrNull()
-        if (last != null && !last.final && last.speaker == Speaker.CALLER) lines[lines.lastIndex] = last.copy(text = last.text + delta)
-        else lines += TranscriptLine(delta, final = false)
-        s.copy(status = ScreeningStatus.Live, lines = lines)
-    }
-
-    private fun finaliseLine(full: String) = _state.update { s ->
-        val lines = s.lines.toMutableList()
-        val last = lines.lastOrNull()
-        if (last != null && !last.final && last.speaker == Speaker.CALLER) lines[lines.lastIndex] = TranscriptLine(full.ifBlank { last.text }, final = true)
-        else if (full.isNotBlank()) lines += TranscriptLine(full, final = true)
-        s.copy(status = ScreeningStatus.Live, lines = lines)
-    }
+    private fun addLine(line: TranscriptLine) = _state.update { s -> s.copy(status = s.stillLive(), lines = TranscriptBuilder.addLine(s.lines, line)) }
+    private fun appendDelta(delta: String) = _state.update { s -> s.copy(status = s.stillLive(), lines = TranscriptBuilder.appendDelta(s.lines, delta)) }
+    private fun finaliseLine(full: String) = _state.update { s -> s.copy(status = s.stillLive(), lines = TranscriptBuilder.finaliseLine(s.lines, full)) }
 }

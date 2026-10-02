@@ -66,6 +66,20 @@
             android:name=".settings.SettingsActivity"
             android:exported="false" />
 
+        <activity
+            android:name=".inbox.InboxActivity"
+            android:exported="false" />
+
+        <!-- Glyph Toy: pick "Concierge" with the Glyph button and the matrix shows caller ID
+             + live transcript during screened calls, locked or not. -->
+        <service android:name=".glyph.ConciergeToy" android:exported="true">
+            <intent-filter><action android:name="com.nothing.glyph.TOY" /></intent-filter>
+            <meta-data android:name="com.nothing.glyph.toy.name" android:resource="@string/toy_concierge" />
+            <meta-data android:name="com.nothing.glyph.toy.image" android:resource="@drawable/toy_concierge" />
+            <meta-data android:name="com.nothing.glyph.toy.summary" android:resource="@string/toy_concierge_summary" />
+            <meta-data android:name="com.nothing.glyph.toy.longpress" android:value="1" />
+        </service>
+
         <!--
           ================== Dialer intent filters ==================
           RoleManager will only offer ROLE_DIALER if the app handles:

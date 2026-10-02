@@ -50,6 +50,9 @@ class MainActivity : ComponentActivity() {
         setContent {
             NothingTheme {
                 val tier by app.license.tier.collectAsState()
+                val inbox by uk.nothingsuite.app.inbox.CallInbox.calls.collectAsState()
+                val inboxCount = inbox.size
+                val unread = inbox.count { !it.read && !it.live }
 
                 Column(Modifier.fillMaxSize().padding(20.dp)) {
                     DotMatrixText("NOTHING SUITE", size = 28)
@@ -117,6 +120,26 @@ class MainActivity : ComponentActivity() {
                             Spacer(Modifier.height(12.dp))
                             NothingButton("OPEN LIVE VIEW", NothingButtonStyle.Outline, Modifier.fillMaxWidth(), enabled = configured) {
                                 startActivity(Intent(this@MainActivity, uk.nothingsuite.app.transcript.LiveTranscriptActivity::class.java))
+                            }
+                        }
+                    }
+                    Spacer(Modifier.height(12.dp))
+
+                    NothingCard(Modifier.fillMaxWidth()) {
+                        Column(Modifier.padding(16.dp)) {
+                            DotMatrixText("4 · INBOX", size = 14)
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                when {
+                                    unread > 0 -> "$unread new call${if (unread == 1) "" else "s"} screened for you."
+                                    inboxCount > 0 -> "$inboxCount call${if (inboxCount == 1) "" else "s"} screened. Nothing new."
+                                    else -> "Every call the concierge takes is kept here, with what the caller said."
+                                },
+                                style = typography.body, color = if (unread > 0) colors.accent else colors.onBackground,
+                            )
+                            Spacer(Modifier.height(12.dp))
+                            NothingButton(if (unread > 0) "OPEN INBOX · $unread NEW" else "OPEN INBOX", if (unread > 0) NothingButtonStyle.Accent else NothingButtonStyle.Outline, Modifier.fillMaxWidth()) {
+                                startActivity(Intent(this@MainActivity, uk.nothingsuite.app.inbox.InboxActivity::class.java))
                             }
                         }
                     }

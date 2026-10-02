@@ -23,13 +23,47 @@ export const ACTIONS = Object.freeze({
 /** Live calls by CallSid, so stop/start churn from updates doesn't look like a hang-up. */
 class CallRegistry {
   #calls = new Map();
+  /** Called when nobody reconnects after an action: ends the call for the app. */
+  onOrphaned = null;
   start(callSid, from) {
     const existing = this.#calls.get(callSid);
-    if (existing) { existing.reconnecting = false; return { resumed: true, from: existing.from }; }
-    this.#calls.set(callSid, { from, reconnecting: false, endReason: null });
+    if (existing) {
+      existing.reconnecting = false;
+      clearTimeout(existing.reconnectTimer); existing.reconnectTimer = null;
+      return { resumed: true, from: existing.from };
+    }
+    this.#calls.set(callSid, { from, reconnecting: false, endReason: null, reconnectTimer: null, said: false });
     return { resumed: false, from };
   }
-  expectReconnect(callSid) { const c = this.#calls.get(callSid); if (c) c.reconnecting = true; }
+  /** The caller has said something we transcribed. */
+  markSaid(callSid) { const c = this.#calls.get(callSid); if (c) c.said = true; }
+  /** How the call ended, in words the user will read. */
+  #endText(c, fallback) {
+    if (c.endReason) return c.endReason;
+    if (/hung up|socket closed/i.test(fallback) && !c.said) return 'hung up without leaving a message';
+    return fallback;
+  }
+  expectReconnect(callSid) {
+    const c = this.#calls.get(callSid);
+    if (!c) return;
+    c.reconnecting = true;
+    // If the caller hangs up while the concierge is mid-sentence, Twilio never opens
+    // the next stream and no one would report the end. Give it 25 s, then call it.
+    clearTimeout(c.reconnectTimer);
+    c.reconnectTimer = setTimeout(() => {
+      if (!this.#calls.has(callSid) || !c.reconnecting) return;
+      this.#calls.delete(callSid);
+      this.onOrphaned?.(callSid, c.from, this.#endText(c, 'caller hung up'));
+    }, 25_000);
+  }
+  /** Twilio status callback says the call is over: end it whatever state we're in. */
+  forceEnd(callSid, reason) {
+    const c = this.#calls.get(callSid);
+    if (!c) return null;
+    clearTimeout(c.reconnectTimer);
+    this.#calls.delete(callSid);
+    return { from: c.from, reason: this.#endText(c, reason) };
+  }
   willEnd(callSid, reason) { const c = this.#calls.get(callSid); if (c) c.endReason = reason; }
   /** Returns null when the stop should be ignored (a reconnect is coming), else the end reason. */
   stop(callSid, fallbackReason) {
@@ -37,11 +71,38 @@ class CallRegistry {
     if (!c) return fallbackReason;
     if (c.reconnecting) return null;
     this.#calls.delete(callSid);
-    return c.endReason ?? fallbackReason;
+    return this.#endText(c, fallbackReason);
   }
   from(callSid) { return this.#calls.get(callSid)?.from; }
+  /** CallSids we believe are still live. */
+  active() { return [...this.#calls.keys()]; }
 }
 export const registry = new CallRegistry();
+
+const ENDED = new Set(['completed', 'busy', 'failed', 'no-answer', 'canceled']);
+
+/**
+ * Watchdog: Twilio only tells us about a call through the media stream, and
+ * there is no stream while the greeting plays or while the concierge is
+ * speaking. If the caller hangs up then, nobody would report it — so while
+ * any call is open we ask Twilio every few seconds whether it still is.
+ */
+export function startCallWatchdog(broadcaster, intervalMs = 4000) {
+  setInterval(async () => {
+    for (const callSid of registry.active()) {
+      try {
+        const call = await client.calls(callSid).fetch();
+        if (!ENDED.has(call.status)) continue;
+        const ended = registry.forceEnd(callSid, call.status === 'completed' ? 'caller hung up' : `call ${call.status}`);
+        if (!ended) continue;
+        console.log(`[watchdog] ${callSid} is ${call.status} → ending on the phone`);
+        broadcaster.send({ type: 'call_ended', callSid, from: ended.from, text: ended.reason });
+      } catch (e) {
+        console.warn(`[watchdog] could not check ${callSid}: ${e.message}`);
+      }
+    }
+  }, intervalMs).unref();
+}
 
 const client = twilio(config.twilio.accountSid, config.twilio.authToken);
 
@@ -79,7 +140,16 @@ export async function applyAction({ callSid, action, text, to }, broadcaster) {
   }
 
   console.log(`[action] ${action} on ${callSid}: "${line}"`);
+  try {
+    await client.calls(callSid).update({ twiml: twiml.toString() });
+  } catch (e) {
+    if (/not in-progress/i.test(e.message)) {
+      const ended = registry.forceEnd(callSid, 'caller hung up');
+      broadcaster.send({ type: 'call_ended', callSid, from, text: ended?.reason ?? 'caller hung up' });
+      throw new Error('The caller has already hung up.');
+    }
+    throw e;
+  }
   broadcaster.send({ type: 'assistant', callSid, from, text: line });
-  await client.calls(callSid).update({ twiml: twiml.toString() });
   return line;
 }

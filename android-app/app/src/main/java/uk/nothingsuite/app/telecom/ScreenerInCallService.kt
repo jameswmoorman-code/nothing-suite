@@ -26,8 +26,10 @@ class ScreenerInCallService : InCallService() {
         if (call.state == Call.STATE_RINGING) {
             val settings = NothingSuiteApp.instance.settings
             val number = call.details?.handle?.schemeSpecificPart
-            if (settings.autoScreenUnknown && settings.isConfigured && !isInContacts(number)) {
+            val deskModeActive = settings.deskMode && uk.nothingsuite.app.desk.DeskMode.faceDown.value
+            if (settings.isConfigured && (deskModeActive || (settings.autoScreenUnknown && !isInContacts(number)))) {
                 // Pixel-style automatic screening: unknown caller never rings through.
+                // Desk mode: phone face down → nobody rings through.
                 CallRepository.current.value?.takeIf { it.call == call }?.let { ScreenCallAction.execute(this, it) }
                 return
             }

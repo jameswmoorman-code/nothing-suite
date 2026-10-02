@@ -64,6 +64,16 @@ class SecureSettings(context: Context) {
         get() = prefs.getBoolean(KEY_AUTO_UNKNOWN, false)
         set(v) = prefs.edit { putBoolean(KEY_AUTO_UNKNOWN, v) }
 
+    /** Show caller + live transcript on the Glyph Matrix during a screened call (Phone (3)). */
+    var glyphCallerId: Boolean
+        get() = prefs.getBoolean("glyph_caller_id", true)
+        set(v) = prefs.edit { putBoolean("glyph_caller_id", v) }
+
+    /** Face down on the desk = every call goes to the concierge without ringing. */
+    var deskMode: Boolean
+        get() = prefs.getBoolean("desk_mode", true)
+        set(v) = prefs.edit { putBoolean("desk_mode", v) }
+
     val isConfigured: Boolean get() = backendWsUrl.startsWith("wss://") && sharedSecret.isNotBlank()
 
     /** Phones auto-capitalise and add spaces; accept https:// too and turn it into wss://. */

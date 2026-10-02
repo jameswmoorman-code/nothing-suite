@@ -61,6 +61,11 @@ voiceRouter.post('/voice', twilioSignatureGuard, (req, res) => {
 
 /** Twilio status callbacks (optional; wire in the console if you want them). */
 voiceRouter.post('/voice/status', twilioSignatureGuard, (req, res) => {
-  console.log(`[voice] status CallSid=${req.body.CallSid} → ${req.body.CallStatus}`);
+  const { CallSid, CallStatus } = req.body;
+  console.log(`[voice] status CallSid=${CallSid} → ${CallStatus}`);
+  if (['completed', 'busy', 'failed', 'no-answer', 'canceled'].includes(CallStatus)) {
+    const ended = registry.forceEnd(CallSid, 'caller hung up');
+    if (ended && broadcaster) broadcaster.send({ type: 'call_ended', callSid: CallSid, from: ended.from, text: ended.reason });
+  }
   res.sendStatus(204);
 });

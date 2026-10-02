@@ -16,3 +16,6 @@ __pycache__/
 *.pyc
 # OS
 .DS_Store
+
+# local bin folder (Cowork moves files here instead of deleting)
+_to_delete/

@@ -20,6 +20,7 @@ import { WebSocketServer } from 'ws';
 import { config } from './config.js';
 import { voiceRouter, attachBroadcaster } from './twilio/voiceWebhook.js';
 import { handleTwilioMediaSocket } from './twilio/mediaStream.js';
+import { registry, startCallWatchdog } from './twilio/callControl.js';
 import { AppBroadcaster } from './app/appSocket.js';
 
 const app = express();
@@ -36,6 +37,11 @@ const twilioWss = new WebSocketServer({ noServer: true });
 const appWss = new WebSocketServer({ noServer: true });
 const broadcaster = new AppBroadcaster(appWss);
 attachBroadcaster(broadcaster);
+startCallWatchdog(broadcaster);
+registry.onOrphaned = (callSid, from, reason) => {
+  console.log(`[voice] ${callSid} ended while the concierge was speaking (${reason})`);
+  broadcaster.send({ type: 'call_ended', callSid, from, text: reason });
+};
 
 server.on('upgrade', (req, socket, head) => {
   const url = new URL(req.url, `http://${req.headers.host}`);

@@ -65,7 +65,10 @@ class LiveTranscriptActivity : ComponentActivity() {
         setContent {
             NothingTheme {
                 val state by vm.state.collectAsState()
-                TranscriptScreen(state, vm, onClose = ::finish)
+                TranscriptScreen(state, vm, onClose = ::finish, onOpenInbox = { sid ->
+                    startActivity(android.content.Intent(this, uk.nothingsuite.app.inbox.InboxActivity::class.java).putExtra(uk.nothingsuite.app.inbox.InboxActivity.EXTRA_CALL_SID, sid))
+                    finish()
+                })
             }
         }
     }
@@ -77,12 +80,16 @@ class LiveTranscriptActivity : ComponentActivity() {
 }
 
 @Composable
-private fun TranscriptScreen(state: TranscriptUiState, vm: TranscriptViewModel, onClose: () -> Unit) {
+private fun TranscriptScreen(state: TranscriptUiState, vm: TranscriptViewModel, onClose: () -> Unit, onOpenInbox: (String?) -> Unit) {
     val listState = rememberLazyListState()
     LaunchedEffect(state.lines.size, state.lines.lastOrNull()?.text?.length) {
         if (state.lines.isNotEmpty()) listState.animateScrollToItem(state.lines.lastIndex)
     }
     val live = state.status == ScreeningStatus.Live
+    // The call's over: give a moment to read the last line, then get out of the way.
+    LaunchedEffect(state.status) {
+        if (state.status == ScreeningStatus.Ended) { kotlinx.coroutines.delay(4000); onClose() }
+    }
 
     Column(Modifier.fillMaxSize().padding(20.dp)) {
         DotMatrixText(
@@ -99,6 +106,7 @@ private fun TranscriptScreen(state: TranscriptUiState, vm: TranscriptViewModel, 
         Spacer(Modifier.height(4.dp))
         DotMatrixText(text = state.caller ?: "UNKNOWN", size = 24)
         Spacer(Modifier.height(12.dp))
+        if (state.risk != Risk.NONE) { RiskBanner(state.risk, state.riskReasons); Spacer(Modifier.height(12.dp)) }
 
         if (state.status == ScreeningStatus.Connecting || state.status == ScreeningStatus.Waiting) {
             NothingLoader(); Spacer(Modifier.height(12.dp))
@@ -127,7 +135,7 @@ private fun TranscriptScreen(state: TranscriptUiState, vm: TranscriptViewModel, 
         Spacer(Modifier.height(12.dp))
 
         if (live) {
-            NothingButton("TAKE THE CALL", NothingButtonStyle.Accent, Modifier.fillMaxWidth(), enabled = !state.connecting) { vm.takeTheCall() }
+            NothingButton("TAKE THE CALL", if (state.risk == Risk.SCAM) NothingButtonStyle.Outline else NothingButtonStyle.Accent, Modifier.fillMaxWidth(), enabled = !state.connecting) { vm.takeTheCall() }
             Spacer(Modifier.height(8.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 NothingButton("ASK WHY", NothingButtonStyle.Outline, Modifier.weight(1f)) { vm.askReason() }
@@ -136,9 +144,13 @@ private fun TranscriptScreen(state: TranscriptUiState, vm: TranscriptViewModel, 
             Spacer(Modifier.height(8.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 NothingButton("TAKE MESSAGE", NothingButtonStyle.Outline, Modifier.weight(1f)) { vm.takeMessage() }
-                NothingButton("HANG UP", NothingButtonStyle.Solid, Modifier.weight(1f)) { vm.hangUp() }
+                NothingButton("HANG UP", if (state.risk == Risk.SCAM) NothingButtonStyle.Accent else NothingButtonStyle.Solid, Modifier.weight(1f)) { vm.hangUp() }
             }
         } else {
+            if (state.status == ScreeningStatus.Ended) {
+                NothingButton("OPEN IN INBOX", NothingButtonStyle.Outline, Modifier.fillMaxWidth()) { onOpenInbox(state.callSid) }
+                Spacer(Modifier.height(8.dp))
+            }
             NothingButton(if (state.status == ScreeningStatus.Ended) "DONE" else "CLOSE", NothingButtonStyle.Outline, Modifier.fillMaxWidth(), onClick = onClose)
         }
     }

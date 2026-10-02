@@ -24,6 +24,7 @@ class NothingSuiteApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        uk.nothingsuite.app.inbox.CallInbox.init(this)
         instance = this
         settings = SecureSettings(this)
         license = LicenseManager(

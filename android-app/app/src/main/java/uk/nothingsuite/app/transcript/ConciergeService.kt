@@ -46,11 +46,17 @@ class ConciergeService : Service() {
         else startForeground(NOTIFICATION_ID, n)
 
         ConciergeLink.start(app.settings)
+        uk.nothingsuite.app.desk.DeskMode.start(this)
         if (watcher == null) watcher = scope.launch {
             ConciergeLink.frames.collect { frame ->
+                uk.nothingsuite.app.inbox.CallInbox.record(frame)
+                if (NothingSuiteApp.instance.settings.glyphCallerId) runCatching {
+                    if (frame.type == "call_started") uk.nothingsuite.app.glyph.GlyphCallerId.attachAppSink(this@ConciergeService)
+                    uk.nothingsuite.app.glyph.GlyphCallerId.onFrame(this@ConciergeService, frame)
+                }.onFailure { android.util.Log.e("Concierge", "glyph caller id failed", it) }
                 when (frame.type) {
                     "call_started" -> popLiveScreen(frame)
-                    "call_ended" -> CallBanner.hide(this@ConciergeService)
+                    "call_ended" -> { CallBanner.hide(this@ConciergeService); notifyInbox(frame) }
                 }
             }
         }
@@ -85,11 +91,33 @@ class ConciergeService : Service() {
         }
     }
 
-    override fun onDestroy() { scope.cancel(); super.onDestroy() }
+    /** The call is over: replace the ringing-style notification with a quiet "in your inbox" one. */
+    private fun notifyInbox(frame: TranscriptFrame) {
+        val nm = getSystemService(android.app.NotificationManager::class.java)
+        nm.cancel(CALL_NOTIFICATION_ID)
+        val call = uk.nothingsuite.app.inbox.CallInbox.calls.value.firstOrNull { it.callSid == frame.callSid } ?: return
+        if (call.read) return
+        val open = Intent(this, uk.nothingsuite.app.inbox.InboxActivity::class.java)
+            .putExtra(uk.nothingsuite.app.inbox.InboxActivity.EXTRA_CALL_SID, call.callSid)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        val pi = PendingIntent.getActivity(this, 2, open, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        val n = Notification.Builder(this, NothingSuiteApp.CHANNEL_SCREENING)
+            .setSmallIcon(android.R.drawable.sym_action_call)
+            .setContentTitle((if (call.risk == Risk.SCAM) "\u26A0 Scam likely \u00B7 " else if (call.risk == Risk.CAUTION) "\u26A0 Caution \u00B7 " else "Screened call from ") + call.from)
+            .setContentText(call.gist)
+            .setStyle(Notification.BigTextStyle().bigText(call.gist + (call.outcome?.let { "\n${it.replaceFirstChar(Char::uppercase)}" } ?: "")))
+            .setContentIntent(pi)
+            .setAutoCancel(true)
+            .build()
+        nm.notify(INBOX_NOTIFICATION_BASE + (call.callSid.hashCode() and 0xFFFF), n)
+    }
+
+    override fun onDestroy() { scope.cancel(); uk.nothingsuite.app.desk.DeskMode.stop(); runCatching { uk.nothingsuite.app.glyph.GlyphCallerId.releaseAppSink() }; super.onDestroy() }
 
     companion object {
         private const val NOTIFICATION_ID = 0xC0CE
         const val CALL_NOTIFICATION_ID = 0xC0CF
+        private const val INBOX_NOTIFICATION_BASE = 0x1B000
 
         /** May we open the live screen from the background while the phone is in use? */
         fun canPopUp(context: Context): Boolean = android.provider.Settings.canDrawOverlays(context)

@@ -9,4 +9,6 @@
     <string name="screening_call">SCREENING</string>
     <string name="transcript_waiting">WAITING FOR CALLER…</string>
     <string name="set_default_dialer">SET AS DEFAULT PHONE APP</string>
+    <string name="toy_concierge">Concierge</string>
+    <string name="toy_concierge_summary">Who\'s calling and what they\'re saying, on the back of the phone, while the concierge screens the call. Shows new-call count when idle. Hold to open the inbox.</string>
 </resources>

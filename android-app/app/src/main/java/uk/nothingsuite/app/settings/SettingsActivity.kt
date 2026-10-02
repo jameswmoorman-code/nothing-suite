@@ -51,6 +51,8 @@ class SettingsActivity : ComponentActivity() {
                 var mine by remember { mutableStateOf(settings.myNumber) }
                 var reject by remember { mutableStateOf(settings.rejectToScreen) }
                 var autoUnknown by remember { mutableStateOf(settings.autoScreenUnknown) }
+                var glyphId by remember { mutableStateOf(settings.glyphCallerId) }
+                var desk by remember { mutableStateOf(settings.deskMode) }
 
                 Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp)) {
                     DotMatrixText("SETUP", size = 28)
@@ -87,6 +89,22 @@ class SettingsActivity : ComponentActivity() {
                         autoUnknown = !autoUnknown; settings.autoScreenUnknown = autoUnknown
                     }
                     Text("Numbers not in your contacts go straight to the assistant without ringing. Needs the Contacts permission.", style = typography.caption)
+                    Spacer(Modifier.height(12.dp))
+                    NothingButton(if (desk) "DESK MODE: ON" else "DESK MODE: OFF", if (desk) NothingButtonStyle.Solid else NothingButtonStyle.Outline, Modifier.fillMaxWidth()) {
+                        desk = !desk; settings.deskMode = desk
+                    }
+                    Text("Phone face down on the desk = busy. Every call goes to the concierge without ringing until you pick it up. The Concierge Glyph face shows the time and how many calls it took.", style = typography.caption)
+                    Spacer(Modifier.height(12.dp))
+                    NothingButton(if (glyphId) "GLYPH CALLER ID: ON" else "GLYPH CALLER ID: OFF", if (glyphId) NothingButtonStyle.Solid else NothingButtonStyle.Outline, Modifier.fillMaxWidth()) {
+                        glyphId = !glyphId; settings.glyphCallerId = glyphId
+                    }
+                    Text("Phone (3): while the concierge is on a call, the Glyph Matrix shows who's calling on top and what they're saying underneath — handy with the phone face down. Flashes on a scam alert. For it to work while the phone is locked, add the Concierge Glyph Toy and leave it selected.", style = typography.caption)
+                    Spacer(Modifier.height(8.dp))
+                    NothingButton("ADD CONCIERGE GLYPH TOY", NothingButtonStyle.Outline, Modifier.fillMaxWidth()) {
+                        runCatching {
+                            startActivity(Intent().setComponent(android.content.ComponentName("com.nothing.thirdparty", "com.nothing.thirdparty.matrix.toys.manager.ToysManagerActivity")))
+                        }.onFailure { runCatching { startActivity(Intent(android.provider.Settings.ACTION_SETTINGS)) } }
+                    }
                     Spacer(Modifier.height(24.dp))
 
                     NothingButton("DONE", NothingButtonStyle.Solid, Modifier.fillMaxWidth()) {
